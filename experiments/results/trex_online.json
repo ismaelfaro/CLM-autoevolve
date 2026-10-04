@@ -1,0 +1,4069 @@
+{
+ "args": {
+  "encoder": "hash",
+  "dim": 256,
+  "ckpt": null,
+  "emb_url": "http://127.0.0.1:8090/v1/embeddings",
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "arms": [
+   "frozen",
+   "map",
+   "lora",
+   "lora+map",
+   "lora+map+distill",
+   "lora-ungated",
+   "all-positive-ungated"
+  ],
+  "train_frames": 60000,
+  "eval_seeds": [
+   100,
+   101,
+   102,
+   103,
+   104
+  ],
+  "eval_frames": 7200,
+  "k": 4,
+  "update_every": 10,
+  "window": 8,
+  "steps": 8,
+  "batch": 256,
+  "rank": 8,
+  "lr": 0.002,
+  "kl": 0.05,
+  "map_k": 64,
+  "map_tau": 0.05,
+  "map_strength": 2.0,
+  "out": "/home/user/CLM-autoevolve/experiments/results/trex_online.json"
+ },
+ "bases": {
+  "0": {
+   "base_examples": 7071,
+   "base_train_acc": 0.9464008212089539,
+   "label_mix": {
+    "jump": 0.08966199971715458,
+    "duck": 0.09786451704143685,
+    "run": 0.8124734832414086
+   }
+  },
+  "1": {
+   "base_examples": 7137,
+   "base_train_acc": 0.9389098882675171,
+   "label_mix": {
+    "jump": 0.09457755359394704,
+    "duck": 0.10985007706319182,
+    "run": 0.7955723693428611
+   }
+  },
+  "2": {
+   "base_examples": 6795,
+   "base_train_acc": 0.9446651935577393,
+   "label_mix": {
+    "jump": 0.0894775570272259,
+    "duck": 0.09021339220014717,
+    "run": 0.820309050772627
+   }
+  },
+  "3": {
+   "base_examples": 6939,
+   "base_train_acc": 0.9484075307846069,
+   "label_mix": {
+    "jump": 0.09540279579190085,
+    "duck": 0.10491425277417496,
+    "run": 0.7996829514339242
+   }
+  },
+  "4": {
+   "base_examples": 6802,
+   "base_train_acc": 0.9453101754188538,
+   "label_mix": {
+    "jump": 0.09291384886798,
+    "duck": 0.10599823581299618,
+    "run": 0.8010879153190238
+   }
+  }
+ },
+ "rows": [
+  {
+   "arm": "frozen",
+   "seed": 0,
+   "train_phases": [
+    {
+     "deaths_per_min": 8.64,
+     "clear_rate": 0.6962
+    },
+    {
+     "deaths_per_min": 7.2,
+     "clear_rate": 0.7753
+    },
+    {
+     "deaths_per_min": 8.46,
+     "clear_rate": 0.7117
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 135,
+    "cleared": 364,
+    "deaths_per_min": 8.1,
+    "clear_rate": 0.7295,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      36,
+      14
+     ],
+     "2 small cacti": [
+      46,
+      20
+     ],
+     "3 large cacti": [
+      44,
+      19
+     ],
+     "3 small cacti": [
+      56,
+      16
+     ],
+     "bird at head height": [
+      24,
+      9
+     ],
+     "high bird": [
+      19,
+      3
+     ],
+     "large cactus": [
+      75,
+      27
+     ],
+     "low bird": [
+      16,
+      13
+     ],
+     "small cactus": [
+      48,
+      14
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 7.7,
+    "clear_rate": 0.7407,
+    "oracle_agreement": 0.9255,
+    "by_type": {
+     "2 large cacti": [
+      31,
+      18
+     ],
+     "2 small cacti": [
+      35,
+      4
+     ],
+     "3 large cacti": [
+      26,
+      9
+     ],
+     "3 small cacti": [
+      21,
+      12
+     ],
+     "bird at head height": [
+      12,
+      1
+     ],
+     "high bird": [
+      17,
+      0
+     ],
+     "large cactus": [
+      40,
+      12
+     ],
+     "low bird": [
+      6,
+      12
+     ],
+     "small cactus": [
+      32,
+      9
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 0,
+   "seconds": 13.5
+  },
+  {
+   "arm": "map",
+   "seed": 0,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.48,
+     "clear_rate": 0.8173
+    },
+    {
+     "deaths_per_min": 4.14,
+     "clear_rate": 0.9004
+    },
+    {
+     "deaths_per_min": 5.58,
+     "clear_rate": 0.8517
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 90,
+    "cleared": 547,
+    "deaths_per_min": 5.4,
+    "clear_rate": 0.8587,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      60,
+      10
+     ],
+     "2 small cacti": [
+      77,
+      7
+     ],
+     "3 large cacti": [
+      53,
+      18
+     ],
+     "3 small cacti": [
+      66,
+      11
+     ],
+     "bird at head height": [
+      39,
+      8
+     ],
+     "high bird": [
+      44,
+      2
+     ],
+     "large cactus": [
+      98,
+      8
+     ],
+     "low bird": [
+      27,
+      16
+     ],
+     "small cactus": [
+      83,
+      10
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 2.8,
+    "clear_rate": 0.935,
+    "oracle_agreement": 0.9061,
+    "by_type": {
+     "2 large cacti": [
+      57,
+      3
+     ],
+     "2 small cacti": [
+      72,
+      0
+     ],
+     "3 large cacti": [
+      46,
+      10
+     ],
+     "3 small cacti": [
+      53,
+      3
+     ],
+     "bird at head height": [
+      19,
+      1
+     ],
+     "high bird": [
+      27,
+      0
+     ],
+     "large cactus": [
+      62,
+      0
+     ],
+     "low bird": [
+      19,
+      9
+     ],
+     "small cactus": [
+      48,
+      2
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 7939,
+   "seconds": 29.1
+  },
+  {
+   "arm": "lora",
+   "seed": 0,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.72,
+     "clear_rate": 0.6197
+    },
+    {
+     "deaths_per_min": 9.9,
+     "clear_rate": 0.6071
+    },
+    {
+     "deaths_per_min": 8.28,
+     "clear_rate": 0.7212
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 155,
+    "cleared": 292,
+    "deaths_per_min": 9.3,
+    "clear_rate": 0.6532,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      37,
+      14
+     ],
+     "2 small cacti": [
+      39,
+      16
+     ],
+     "3 large cacti": [
+      28,
+      25
+     ],
+     "3 small cacti": [
+      46,
+      17
+     ],
+     "bird at head height": [
+      17,
+      15
+     ],
+     "high bird": [
+      11,
+      10
+     ],
+     "large cactus": [
+      62,
+      31
+     ],
+     "low bird": [
+      9,
+      7
+     ],
+     "small cactus": [
+      43,
+      20
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 1.0,
+    "clear_rate": 0.9805,
+    "oracle_agreement": 0.8046,
+    "by_type": {
+     "2 large cacti": [
+      63,
+      2
+     ],
+     "2 small cacti": [
+      57,
+      0
+     ],
+     "3 large cacti": [
+      63,
+      6
+     ],
+     "3 small cacti": [
+      67,
+      0
+     ],
+     "bird at head height": [
+      33,
+      2
+     ],
+     "high bird": [
+      45,
+      0
+     ],
+     "large cactus": [
+      74,
+      0
+     ],
+     "low bird": [
+      46,
+      0
+     ],
+     "small cactus": [
+      56,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 37,
+    "published": 8,
+    "rejected": 29,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 22.6
+  },
+  {
+   "arm": "lora+map",
+   "seed": 0,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.12,
+     "clear_rate": 0.8308
+    },
+    {
+     "deaths_per_min": 4.32,
+     "clear_rate": 0.8987
+    },
+    {
+     "deaths_per_min": 4.86,
+     "clear_rate": 0.8811
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 85,
+    "cleared": 580,
+    "deaths_per_min": 5.1,
+    "clear_rate": 0.8722,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      66,
+      10
+     ],
+     "2 small cacti": [
+      85,
+      8
+     ],
+     "3 large cacti": [
+      63,
+      11
+     ],
+     "3 small cacti": [
+      72,
+      7
+     ],
+     "bird at head height": [
+      32,
+      12
+     ],
+     "high bird": [
+      38,
+      5
+     ],
+     "large cactus": [
+      107,
+      15
+     ],
+     "low bird": [
+      29,
+      9
+     ],
+     "small cactus": [
+      88,
+      8
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 1.0,
+    "clear_rate": 0.9823,
+    "oracle_agreement": 0.7617,
+    "by_type": {
+     "2 large cacti": [
+      66,
+      0
+     ],
+     "2 small cacti": [
+      62,
+      1
+     ],
+     "3 large cacti": [
+      63,
+      6
+     ],
+     "3 small cacti": [
+      66,
+      2
+     ],
+     "bird at head height": [
+      50,
+      1
+     ],
+     "high bird": [
+      53,
+      0
+     ],
+     "large cactus": [
+      75,
+      0
+     ],
+     "low bird": [
+      58,
+      0
+     ],
+     "small cactus": [
+      61,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 54,
+    "published": 8,
+    "rejected": 46,
+    "rollbacks": 0
+   },
+   "map_rows": 8357,
+   "seconds": 47.2
+  },
+  {
+   "arm": "lora+map+distill",
+   "seed": 0,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.84,
+     "clear_rate": 0.7979
+    },
+    {
+     "deaths_per_min": 4.5,
+     "clear_rate": 0.8922
+    },
+    {
+     "deaths_per_min": 4.68,
+     "clear_rate": 0.887
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 89,
+    "cleared": 561,
+    "deaths_per_min": 5.34,
+    "clear_rate": 0.8631,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      58,
+      15
+     ],
+     "2 small cacti": [
+      78,
+      11
+     ],
+     "3 large cacti": [
+      59,
+      9
+     ],
+     "3 small cacti": [
+      61,
+      17
+     ],
+     "bird at head height": [
+      57,
+      4
+     ],
+     "high bird": [
+      41,
+      1
+     ],
+     "large cactus": [
+      94,
+      11
+     ],
+     "low bird": [
+      31,
+      10
+     ],
+     "small cactus": [
+      82,
+      11
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 1.3,
+    "clear_rate": 0.9757,
+    "oracle_agreement": 0.7836,
+    "by_type": {
+     "2 large cacti": [
+      61,
+      1
+     ],
+     "2 small cacti": [
+      69,
+      0
+     ],
+     "3 large cacti": [
+      65,
+      6
+     ],
+     "3 small cacti": [
+      55,
+      3
+     ],
+     "bird at head height": [
+      52,
+      0
+     ],
+     "high bird": [
+      51,
+      0
+     ],
+     "large cactus": [
+      66,
+      0
+     ],
+     "low bird": [
+      54,
+      3
+     ],
+     "small cactus": [
+      50,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 52,
+    "published": 2,
+    "rejected": 50,
+    "rollbacks": 3
+   },
+   "map_rows": 8138,
+   "seconds": 53.1
+  },
+  {
+   "arm": "lora-ungated",
+   "seed": 0,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.36,
+     "clear_rate": 0.6414
+    },
+    {
+     "deaths_per_min": 10.08,
+     "clear_rate": 0.6056
+    },
+    {
+     "deaths_per_min": 10.08,
+     "clear_rate": 0.5942
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 164,
+    "cleared": 261,
+    "deaths_per_min": 9.84,
+    "clear_rate": 0.6141,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      30,
+      20
+     ],
+     "2 small cacti": [
+      36,
+      23
+     ],
+     "3 large cacti": [
+      28,
+      20
+     ],
+     "3 small cacti": [
+      42,
+      24
+     ],
+     "bird at head height": [
+      4,
+      14
+     ],
+     "high bird": [
+      8,
+      5
+     ],
+     "large cactus": [
+      64,
+      27
+     ],
+     "low bird": [
+      4,
+      11
+     ],
+     "small cactus": [
+      45,
+      20
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 2.0,
+    "clear_rate": 0.9592,
+    "oracle_agreement": 0.7359,
+    "by_type": {
+     "2 large cacti": [
+      61,
+      2
+     ],
+     "2 small cacti": [
+      76,
+      1
+     ],
+     "3 large cacti": [
+      44,
+      8
+     ],
+     "3 small cacti": [
+      54,
+      3
+     ],
+     "bird at head height": [
+      31,
+      3
+     ],
+     "high bird": [
+      39,
+      1
+     ],
+     "large cactus": [
+      75,
+      0
+     ],
+     "low bird": [
+      40,
+      1
+     ],
+     "small cactus": [
+      50,
+      1
+     ]
+    }
+   },
+   "learner": {
+    "updates": 33,
+    "published": 33,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 21.6
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 0,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.9,
+     "clear_rate": 0.6043
+    },
+    {
+     "deaths_per_min": 9.9,
+     "clear_rate": 0.6233
+    },
+    {
+     "deaths_per_min": 10.26,
+     "clear_rate": 0.5809
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 167,
+    "cleared": 254,
+    "deaths_per_min": 10.02,
+    "clear_rate": 0.6033,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      20,
+      28
+     ],
+     "2 small cacti": [
+      36,
+      15
+     ],
+     "3 large cacti": [
+      21,
+      29
+     ],
+     "3 small cacti": [
+      36,
+      28
+     ],
+     "bird at head height": [
+      10,
+      13
+     ],
+     "high bird": [
+      10,
+      4
+     ],
+     "large cactus": [
+      61,
+      29
+     ],
+     "low bird": [
+      11,
+      8
+     ],
+     "small cactus": [
+      49,
+      13
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 10.4,
+    "clear_rate": 0.5419,
+    "oracle_agreement": 0.8042,
+    "by_type": {
+     "2 large cacti": [
+      6,
+      33
+     ],
+     "2 small cacti": [
+      13,
+      12
+     ],
+     "3 large cacti": [
+      7,
+      22
+     ],
+     "3 small cacti": [
+      19,
+      4
+     ],
+     "bird at head height": [
+      8,
+      4
+     ],
+     "high bird": [
+      12,
+      1
+     ],
+     "large cactus": [
+      25,
+      14
+     ],
+     "low bird": [
+      7,
+      7
+     ],
+     "small cactus": [
+      26,
+      7
+     ]
+    }
+   },
+   "learner": {
+    "updates": 33,
+    "published": 33,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 16.4
+  },
+  {
+   "arm": "frozen",
+   "seed": 1,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.84,
+     "clear_rate": 0.7979
+    },
+    {
+     "deaths_per_min": 8.28,
+     "clear_rate": 0.7341
+    },
+    {
+     "deaths_per_min": 8.64,
+     "clear_rate": 0.7108
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 132,
+    "cleared": 395,
+    "deaths_per_min": 7.92,
+    "clear_rate": 0.7495,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      63,
+      5
+     ],
+     "2 small cacti": [
+      64,
+      10
+     ],
+     "3 large cacti": [
+      24,
+      32
+     ],
+     "3 small cacti": [
+      55,
+      19
+     ],
+     "bird at head height": [
+      14,
+      14
+     ],
+     "high bird": [
+      36,
+      10
+     ],
+     "large cactus": [
+      69,
+      17
+     ],
+     "low bird": [
+      15,
+      4
+     ],
+     "small cactus": [
+      55,
+      21
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 7.1,
+    "clear_rate": 0.7835,
+    "oracle_agreement": 0.9204,
+    "by_type": {
+     "2 large cacti": [
+      48,
+      1
+     ],
+     "2 small cacti": [
+      38,
+      5
+     ],
+     "3 large cacti": [
+      20,
+      23
+     ],
+     "3 small cacti": [
+      23,
+      11
+     ],
+     "bird at head height": [
+      12,
+      6
+     ],
+     "high bird": [
+      20,
+      0
+     ],
+     "large cactus": [
+      48,
+      9
+     ],
+     "low bird": [
+      10,
+      8
+     ],
+     "small cactus": [
+      38,
+      8
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 0,
+   "seconds": 14.7
+  },
+  {
+   "arm": "map",
+   "seed": 1,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.84,
+     "clear_rate": 0.801
+    },
+    {
+     "deaths_per_min": 6.66,
+     "clear_rate": 0.8103
+    },
+    {
+     "deaths_per_min": 6.84,
+     "clear_rate": 0.8051
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 113,
+    "cleared": 468,
+    "deaths_per_min": 6.78,
+    "clear_rate": 0.8055,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      66,
+      5
+     ],
+     "2 small cacti": [
+      67,
+      13
+     ],
+     "3 large cacti": [
+      36,
+      28
+     ],
+     "3 small cacti": [
+      62,
+      16
+     ],
+     "bird at head height": [
+      15,
+      18
+     ],
+     "high bird": [
+      43,
+      2
+     ],
+     "large cactus": [
+      83,
+      9
+     ],
+     "low bird": [
+      25,
+      6
+     ],
+     "small cactus": [
+      71,
+      16
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 4.8,
+    "clear_rate": 0.8794,
+    "oracle_agreement": 0.9194,
+    "by_type": {
+     "2 large cacti": [
+      47,
+      1
+     ],
+     "2 small cacti": [
+      50,
+      4
+     ],
+     "3 large cacti": [
+      44,
+      13
+     ],
+     "3 small cacti": [
+      33,
+      10
+     ],
+     "bird at head height": [
+      22,
+      10
+     ],
+     "high bird": [
+      38,
+      0
+     ],
+     "large cactus": [
+      50,
+      0
+     ],
+     "low bird": [
+      22,
+      7
+     ],
+     "small cactus": [
+      44,
+      3
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 6918,
+   "seconds": 26.4
+  },
+  {
+   "arm": "lora",
+   "seed": 1,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.56,
+     "clear_rate": 0.764
+    },
+    {
+     "deaths_per_min": 8.82,
+     "clear_rate": 0.6975
+    },
+    {
+     "deaths_per_min": 8.28,
+     "clear_rate": 0.7356
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 137,
+    "cleared": 377,
+    "deaths_per_min": 8.22,
+    "clear_rate": 0.7335,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      59,
+      14
+     ],
+     "2 small cacti": [
+      60,
+      14
+     ],
+     "3 large cacti": [
+      21,
+      19
+     ],
+     "3 small cacti": [
+      54,
+      19
+     ],
+     "bird at head height": [
+      9,
+      11
+     ],
+     "high bird": [
+      25,
+      12
+     ],
+     "large cactus": [
+      83,
+      20
+     ],
+     "low bird": [
+      10,
+      10
+     ],
+     "small cactus": [
+      56,
+      18
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 3.6,
+    "clear_rate": 0.9104,
+    "oracle_agreement": 0.8162,
+    "by_type": {
+     "2 large cacti": [
+      57,
+      2
+     ],
+     "2 small cacti": [
+      63,
+      3
+     ],
+     "3 large cacti": [
+      47,
+      9
+     ],
+     "3 small cacti": [
+      51,
+      0
+     ],
+     "bird at head height": [
+      4,
+      7
+     ],
+     "high bird": [
+      22,
+      0
+     ],
+     "large cactus": [
+      63,
+      0
+     ],
+     "low bird": [
+      17,
+      1
+     ],
+     "small cactus": [
+      42,
+      14
+     ]
+    }
+   },
+   "learner": {
+    "updates": 41,
+    "published": 7,
+    "rejected": 34,
+    "rollbacks": 2
+   },
+   "map_rows": 0,
+   "seconds": 24.0
+  },
+  {
+   "arm": "lora+map",
+   "seed": 1,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.48,
+     "clear_rate": 0.8182
+    },
+    {
+     "deaths_per_min": 4.68,
+     "clear_rate": 0.8874
+    },
+    {
+     "deaths_per_min": 4.5,
+     "clear_rate": 0.8922
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 87,
+    "cleared": 574,
+    "deaths_per_min": 5.22,
+    "clear_rate": 0.8684,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      78,
+      7
+     ],
+     "2 small cacti": [
+      79,
+      9
+     ],
+     "3 large cacti": [
+      54,
+      23
+     ],
+     "3 small cacti": [
+      71,
+      7
+     ],
+     "bird at head height": [
+      24,
+      12
+     ],
+     "high bird": [
+      31,
+      13
+     ],
+     "large cactus": [
+      111,
+      5
+     ],
+     "low bird": [
+      26,
+      5
+     ],
+     "small cactus": [
+      100,
+      6
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 0.9,
+    "clear_rate": 0.9835,
+    "oracle_agreement": 0.6991,
+    "by_type": {
+     "2 large cacti": [
+      61,
+      3
+     ],
+     "2 small cacti": [
+      67,
+      1
+     ],
+     "3 large cacti": [
+      59,
+      4
+     ],
+     "3 small cacti": [
+      61,
+      1
+     ],
+     "bird at head height": [
+      40,
+      0
+     ],
+     "high bird": [
+      45,
+      0
+     ],
+     "large cactus": [
+      93,
+      0
+     ],
+     "low bird": [
+      45,
+      0
+     ],
+     "small cactus": [
+      64,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 53,
+    "published": 13,
+    "rejected": 40,
+    "rollbacks": 0
+   },
+   "map_rows": 8301,
+   "seconds": 47.2
+  },
+  {
+   "arm": "lora+map+distill",
+   "seed": 1,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.38,
+     "clear_rate": 0.776
+    },
+    {
+     "deaths_per_min": 4.86,
+     "clear_rate": 0.8831
+    },
+    {
+     "deaths_per_min": 4.32,
+     "clear_rate": 0.8952
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 92,
+    "cleared": 551,
+    "deaths_per_min": 5.52,
+    "clear_rate": 0.8569,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      74,
+      7
+     ],
+     "2 small cacti": [
+      70,
+      9
+     ],
+     "3 large cacti": [
+      50,
+      25
+     ],
+     "3 small cacti": [
+      67,
+      16
+     ],
+     "bird at head height": [
+      45,
+      4
+     ],
+     "high bird": [
+      50,
+      2
+     ],
+     "large cactus": [
+      86,
+      11
+     ],
+     "low bird": [
+      33,
+      7
+     ],
+     "small cactus": [
+      76,
+      11
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 1.0,
+    "clear_rate": 0.982,
+    "oracle_agreement": 0.7471,
+    "by_type": {
+     "2 large cacti": [
+      61,
+      2
+     ],
+     "2 small cacti": [
+      63,
+      0
+     ],
+     "3 large cacti": [
+      66,
+      4
+     ],
+     "3 small cacti": [
+      70,
+      2
+     ],
+     "bird at head height": [
+      56,
+      0
+     ],
+     "high bird": [
+      52,
+      0
+     ],
+     "large cactus": [
+      70,
+      0
+     ],
+     "low bird": [
+      52,
+      2
+     ],
+     "small cactus": [
+      57,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 51,
+    "published": 4,
+    "rejected": 47,
+    "rollbacks": 2
+   },
+   "map_rows": 7970,
+   "seconds": 51.5
+  },
+  {
+   "arm": "lora-ungated",
+   "seed": 1,
+   "train_phases": [
+    {
+     "deaths_per_min": 8.28,
+     "clear_rate": 0.7278
+    },
+    {
+     "deaths_per_min": 9.36,
+     "clear_rate": 0.6709
+    },
+    {
+     "deaths_per_min": 8.46,
+     "clear_rate": 0.7219
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 145,
+    "cleared": 351,
+    "deaths_per_min": 8.7,
+    "clear_rate": 0.7077,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      38,
+      20
+     ],
+     "2 small cacti": [
+      49,
+      16
+     ],
+     "3 large cacti": [
+      37,
+      21
+     ],
+     "3 small cacti": [
+      49,
+      15
+     ],
+     "bird at head height": [
+      16,
+      5
+     ],
+     "high bird": [
+      18,
+      23
+     ],
+     "large cactus": [
+      66,
+      25
+     ],
+     "low bird": [
+      16,
+      7
+     ],
+     "small cactus": [
+      62,
+      13
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 3.2,
+    "clear_rate": 0.9242,
+    "oracle_agreement": 0.7932,
+    "by_type": {
+     "2 large cacti": [
+      62,
+      0
+     ],
+     "2 small cacti": [
+      65,
+      0
+     ],
+     "3 large cacti": [
+      54,
+      5
+     ],
+     "3 small cacti": [
+      49,
+      0
+     ],
+     "bird at head height": [
+      26,
+      0
+     ],
+     "high bird": [
+      25,
+      2
+     ],
+     "large cactus": [
+      44,
+      10
+     ],
+     "low bird": [
+      27,
+      5
+     ],
+     "small cactus": [
+      38,
+      10
+     ]
+    }
+   },
+   "learner": {
+    "updates": 40,
+    "published": 40,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 21.8
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 1,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.36,
+     "clear_rate": 0.6414
+    },
+    {
+     "deaths_per_min": 9.72,
+     "clear_rate": 0.6351
+    },
+    {
+     "deaths_per_min": 9.72,
+     "clear_rate": 0.64
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 160,
+    "cleared": 283,
+    "deaths_per_min": 9.6,
+    "clear_rate": 0.6388,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      40,
+      12
+     ],
+     "2 small cacti": [
+      45,
+      20
+     ],
+     "3 large cacti": [
+      21,
+      28
+     ],
+     "3 small cacti": [
+      46,
+      12
+     ],
+     "bird at head height": [
+      3,
+      12
+     ],
+     "high bird": [
+      11,
+      16
+     ],
+     "large cactus": [
+      62,
+      23
+     ],
+     "low bird": [
+      11,
+      7
+     ],
+     "small cactus": [
+      44,
+      30
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 10.0,
+    "clear_rate": 0.5781,
+    "oracle_agreement": 0.8265,
+    "by_type": {
+     "2 large cacti": [
+      26,
+      11
+     ],
+     "2 small cacti": [
+      19,
+      16
+     ],
+     "3 large cacti": [
+      11,
+      19
+     ],
+     "3 small cacti": [
+      14,
+      12
+     ],
+     "high bird": [
+      5,
+      8
+     ],
+     "large cactus": [
+      30,
+      16
+     ],
+     "low bird": [
+      9,
+      6
+     ],
+     "small cactus": [
+      17,
+      9
+     ],
+     "bird at head height": [
+      6,
+      3
+     ]
+    }
+   },
+   "learner": {
+    "updates": 36,
+    "published": 36,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 17.6
+  },
+  {
+   "arm": "frozen",
+   "seed": 2,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.0,
+     "clear_rate": 0.6753
+    },
+    {
+     "deaths_per_min": 9.72,
+     "clear_rate": 0.6224
+    },
+    {
+     "deaths_per_min": 8.46,
+     "clear_rate": 0.7186
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 151,
+    "cleared": 313,
+    "deaths_per_min": 9.06,
+    "clear_rate": 0.6746,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      28,
+      14
+     ],
+     "2 small cacti": [
+      51,
+      20
+     ],
+     "3 large cacti": [
+      25,
+      42
+     ],
+     "3 small cacti": [
+      37,
+      9
+     ],
+     "bird at head height": [
+      22,
+      10
+     ],
+     "high bird": [
+      19,
+      1
+     ],
+     "large cactus": [
+      66,
+      22
+     ],
+     "low bird": [
+      24,
+      10
+     ],
+     "small cactus": [
+      41,
+      23
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 8.4,
+    "clear_rate": 0.6957,
+    "oracle_agreement": 0.927,
+    "by_type": {
+     "2 large cacti": [
+      28,
+      17
+     ],
+     "2 small cacti": [
+      25,
+      10
+     ],
+     "3 large cacti": [
+      11,
+      22
+     ],
+     "3 small cacti": [
+      29,
+      5
+     ],
+     "high bird": [
+      11,
+      0
+     ],
+     "large cactus": [
+      42,
+      7
+     ],
+     "low bird": [
+      13,
+      9
+     ],
+     "small cactus": [
+      27,
+      11
+     ],
+     "bird at head height": [
+      6,
+      3
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 0,
+   "seconds": 12.9
+  },
+  {
+   "arm": "map",
+   "seed": 2,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.56,
+     "clear_rate": 0.7614
+    },
+    {
+     "deaths_per_min": 7.38,
+     "clear_rate": 0.7747
+    },
+    {
+     "deaths_per_min": 7.56,
+     "clear_rate": 0.7667
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 125,
+    "cleared": 413,
+    "deaths_per_min": 7.5,
+    "clear_rate": 0.7677,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      36,
+      13
+     ],
+     "2 small cacti": [
+      61,
+      14
+     ],
+     "3 large cacti": [
+      43,
+      36
+     ],
+     "3 small cacti": [
+      53,
+      14
+     ],
+     "bird at head height": [
+      15,
+      17
+     ],
+     "high bird": [
+      23,
+      4
+     ],
+     "large cactus": [
+      78,
+      15
+     ],
+     "low bird": [
+      31,
+      4
+     ],
+     "small cactus": [
+      73,
+      8
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 6.8,
+    "clear_rate": 0.7939,
+    "oracle_agreement": 0.934,
+    "by_type": {
+     "2 large cacti": [
+      36,
+      16
+     ],
+     "2 small cacti": [
+      33,
+      8
+     ],
+     "3 large cacti": [
+      22,
+      16
+     ],
+     "3 small cacti": [
+      35,
+      6
+     ],
+     "high bird": [
+      19,
+      0
+     ],
+     "large cactus": [
+      48,
+      4
+     ],
+     "low bird": [
+      18,
+      6
+     ],
+     "small cactus": [
+      44,
+      10
+     ],
+     "bird at head height": [
+      7,
+      2
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 6455,
+   "seconds": 24.2
+  },
+  {
+   "arm": "lora",
+   "seed": 2,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.0,
+     "clear_rate": 0.6753
+    },
+    {
+     "deaths_per_min": 10.26,
+     "clear_rate": 0.5839
+    },
+    {
+     "deaths_per_min": 7.92,
+     "clear_rate": 0.7412
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 151,
+    "cleared": 310,
+    "deaths_per_min": 9.06,
+    "clear_rate": 0.6725,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      30,
+      12
+     ],
+     "2 small cacti": [
+      53,
+      14
+     ],
+     "3 large cacti": [
+      29,
+      40
+     ],
+     "3 small cacti": [
+      34,
+      13
+     ],
+     "bird at head height": [
+      17,
+      12
+     ],
+     "high bird": [
+      22,
+      5
+     ],
+     "large cactus": [
+      54,
+      25
+     ],
+     "low bird": [
+      30,
+      12
+     ],
+     "small cactus": [
+      41,
+      18
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 3.9,
+    "clear_rate": 0.9078,
+    "oracle_agreement": 0.8551,
+    "by_type": {
+     "2 large cacti": [
+      49,
+      5
+     ],
+     "2 small cacti": [
+      63,
+      0
+     ],
+     "3 large cacti": [
+      40,
+      15
+     ],
+     "3 small cacti": [
+      46,
+      1
+     ],
+     "bird at head height": [
+      24,
+      3
+     ],
+     "high bird": [
+      24,
+      11
+     ],
+     "large cactus": [
+      57,
+      4
+     ],
+     "low bird": [
+      33,
+      0
+     ],
+     "small cactus": [
+      48,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 37,
+    "published": 6,
+    "rejected": 31,
+    "rollbacks": 2
+   },
+   "map_rows": 0,
+   "seconds": 22.3
+  },
+  {
+   "arm": "lora+map",
+   "seed": 2,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.72,
+     "clear_rate": 0.6197
+    },
+    {
+     "deaths_per_min": 7.2,
+     "clear_rate": 0.7802
+    },
+    {
+     "deaths_per_min": 5.58,
+     "clear_rate": 0.8524
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 125,
+    "cleared": 409,
+    "deaths_per_min": 7.5,
+    "clear_rate": 0.7659,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      43,
+      15
+     ],
+     "2 small cacti": [
+      72,
+      13
+     ],
+     "3 large cacti": [
+      48,
+      19
+     ],
+     "3 small cacti": [
+      49,
+      18
+     ],
+     "bird at head height": [
+      17,
+      13
+     ],
+     "high bird": [
+      28,
+      9
+     ],
+     "large cactus": [
+      63,
+      18
+     ],
+     "low bird": [
+      32,
+      6
+     ],
+     "small cactus": [
+      57,
+      14
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 0.8,
+    "clear_rate": 0.9859,
+    "oracle_agreement": 0.631,
+    "by_type": {
+     "2 large cacti": [
+      55,
+      3
+     ],
+     "2 small cacti": [
+      66,
+      1
+     ],
+     "3 large cacti": [
+      64,
+      0
+     ],
+     "3 small cacti": [
+      65,
+      2
+     ],
+     "bird at head height": [
+      52,
+      0
+     ],
+     "high bird": [
+      56,
+      1
+     ],
+     "large cactus": [
+      81,
+      0
+     ],
+     "low bird": [
+      61,
+      1
+     ],
+     "small cactus": [
+      60,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 43,
+    "published": 14,
+    "rejected": 29,
+    "rollbacks": 0
+   },
+   "map_rows": 6604,
+   "seconds": 38.8
+  },
+  {
+   "arm": "lora+map+distill",
+   "seed": 2,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.2,
+     "clear_rate": 0.7714
+    },
+    {
+     "deaths_per_min": 4.5,
+     "clear_rate": 0.8894
+    },
+    {
+     "deaths_per_min": 3.96,
+     "clear_rate": 0.9068
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 87,
+    "cleared": 550,
+    "deaths_per_min": 5.22,
+    "clear_rate": 0.8634,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      60,
+      5
+     ],
+     "2 small cacti": [
+      79,
+      11
+     ],
+     "3 large cacti": [
+      76,
+      10
+     ],
+     "3 small cacti": [
+      72,
+      11
+     ],
+     "bird at head height": [
+      18,
+      12
+     ],
+     "high bird": [
+      26,
+      8
+     ],
+     "large cactus": [
+      106,
+      9
+     ],
+     "low bird": [
+      31,
+      9
+     ],
+     "small cactus": [
+      82,
+      12
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 1.0,
+    "clear_rate": 0.981,
+    "oracle_agreement": 0.702,
+    "by_type": {
+     "2 large cacti": [
+      69,
+      0
+     ],
+     "2 small cacti": [
+      64,
+      1
+     ],
+     "3 large cacti": [
+      59,
+      2
+     ],
+     "3 small cacti": [
+      68,
+      0
+     ],
+     "bird at head height": [
+      25,
+      6
+     ],
+     "high bird": [
+      41,
+      0
+     ],
+     "large cactus": [
+      88,
+      1
+     ],
+     "low bird": [
+      39,
+      0
+     ],
+     "small cactus": [
+      64,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 49,
+    "published": 13,
+    "rejected": 36,
+    "rollbacks": 0
+   },
+   "map_rows": 7859,
+   "seconds": 53.9
+  },
+  {
+   "arm": "lora-ungated",
+   "seed": 2,
+   "train_phases": [
+    {
+     "deaths_per_min": 10.44,
+     "clear_rate": 0.5606
+    },
+    {
+     "deaths_per_min": 9.36,
+     "clear_rate": 0.651
+    },
+    {
+     "deaths_per_min": 8.1,
+     "clear_rate": 0.7353
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 155,
+    "cleared": 296,
+    "deaths_per_min": 9.3,
+    "clear_rate": 0.6563,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      31,
+      15
+     ],
+     "2 small cacti": [
+      47,
+      20
+     ],
+     "3 large cacti": [
+      32,
+      30
+     ],
+     "3 small cacti": [
+      32,
+      14
+     ],
+     "bird at head height": [
+      13,
+      13
+     ],
+     "high bird": [
+      15,
+      14
+     ],
+     "large cactus": [
+      50,
+      27
+     ],
+     "low bird": [
+      29,
+      9
+     ],
+     "small cactus": [
+      47,
+      13
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 2.3,
+    "clear_rate": 0.9484,
+    "oracle_agreement": 0.7201,
+    "by_type": {
+     "2 large cacti": [
+      57,
+      4
+     ],
+     "2 small cacti": [
+      65,
+      6
+     ],
+     "3 large cacti": [
+      59,
+      1
+     ],
+     "3 small cacti": [
+      57,
+      0
+     ],
+     "bird at head height": [
+      20,
+      4
+     ],
+     "high bird": [
+      19,
+      5
+     ],
+     "large cactus": [
+      61,
+      3
+     ],
+     "low bird": [
+      27,
+      0
+     ],
+     "small cactus": [
+      58,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 37,
+    "published": 37,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 21.7
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 2,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.18,
+     "clear_rate": 0.66
+    },
+    {
+     "deaths_per_min": 8.82,
+     "clear_rate": 0.6975
+    },
+    {
+     "deaths_per_min": 10.26,
+     "clear_rate": 0.5929
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 157,
+    "cleared": 295,
+    "deaths_per_min": 9.42,
+    "clear_rate": 0.6527,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      29,
+      13
+     ],
+     "2 small cacti": [
+      50,
+      13
+     ],
+     "3 large cacti": [
+      16,
+      44
+     ],
+     "3 small cacti": [
+      28,
+      15
+     ],
+     "bird at head height": [
+      15,
+      15
+     ],
+     "high bird": [
+      20,
+      9
+     ],
+     "large cactus": [
+      59,
+      21
+     ],
+     "low bird": [
+      38,
+      2
+     ],
+     "small cactus": [
+      40,
+      25
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 8.6,
+    "clear_rate": 0.6884,
+    "oracle_agreement": 0.904,
+    "by_type": {
+     "2 large cacti": [
+      31,
+      10
+     ],
+     "2 small cacti": [
+      27,
+      8
+     ],
+     "3 large cacti": [
+      11,
+      22
+     ],
+     "3 small cacti": [
+      9,
+      20
+     ],
+     "high bird": [
+      19,
+      0
+     ],
+     "large cactus": [
+      41,
+      6
+     ],
+     "low bird": [
+      24,
+      6
+     ],
+     "small cactus": [
+      21,
+      12
+     ],
+     "bird at head height": [
+      7,
+      2
+     ]
+    }
+   },
+   "learner": {
+    "updates": 36,
+    "published": 36,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 19.1
+  },
+  {
+   "arm": "frozen",
+   "seed": 3,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.84,
+     "clear_rate": 0.7946
+    },
+    {
+     "deaths_per_min": 8.46,
+     "clear_rate": 0.7025
+    },
+    {
+     "deaths_per_min": 8.1,
+     "clear_rate": 0.7321
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 130,
+    "cleared": 381,
+    "deaths_per_min": 7.8,
+    "clear_rate": 0.7456,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      46,
+      13
+     ],
+     "2 small cacti": [
+      41,
+      14
+     ],
+     "3 large cacti": [
+      42,
+      20
+     ],
+     "3 small cacti": [
+      66,
+      27
+     ],
+     "bird at head height": [
+      16,
+      12
+     ],
+     "high bird": [
+      27,
+      3
+     ],
+     "large cactus": [
+      66,
+      22
+     ],
+     "low bird": [
+      17,
+      3
+     ],
+     "small cactus": [
+      60,
+      16
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 8.9,
+    "clear_rate": 0.6799,
+    "oracle_agreement": 0.908,
+    "by_type": {
+     "2 large cacti": [
+      29,
+      13
+     ],
+     "2 small cacti": [
+      30,
+      7
+     ],
+     "3 large cacti": [
+      10,
+      21
+     ],
+     "3 small cacti": [
+      12,
+      16
+     ],
+     "bird at head height": [
+      12,
+      1
+     ],
+     "high bird": [
+      20,
+      0
+     ],
+     "large cactus": [
+      38,
+      10
+     ],
+     "low bird": [
+      14,
+      11
+     ],
+     "small cactus": [
+      24,
+      10
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 0,
+   "seconds": 13.3
+  },
+  {
+   "arm": "map",
+   "seed": 3,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.38,
+     "clear_rate": 0.7644
+    },
+    {
+     "deaths_per_min": 6.48,
+     "clear_rate": 0.8105
+    },
+    {
+     "deaths_per_min": 6.48,
+     "clear_rate": 0.8173
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 113,
+    "cleared": 448,
+    "deaths_per_min": 6.78,
+    "clear_rate": 0.7986,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      52,
+      14
+     ],
+     "2 small cacti": [
+      56,
+      13
+     ],
+     "3 large cacti": [
+      51,
+      26
+     ],
+     "3 small cacti": [
+      69,
+      16
+     ],
+     "bird at head height": [
+      30,
+      7
+     ],
+     "high bird": [
+      30,
+      5
+     ],
+     "large cactus": [
+      68,
+      15
+     ],
+     "low bird": [
+      23,
+      4
+     ],
+     "small cactus": [
+      69,
+      13
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 3.2,
+    "clear_rate": 0.9229,
+    "oracle_agreement": 0.9031,
+    "by_type": {
+     "2 large cacti": [
+      58,
+      3
+     ],
+     "2 small cacti": [
+      59,
+      14
+     ],
+     "3 large cacti": [
+      60,
+      4
+     ],
+     "3 small cacti": [
+      51,
+      1
+     ],
+     "bird at head height": [
+      15,
+      1
+     ],
+     "high bird": [
+      17,
+      0
+     ],
+     "large cactus": [
+      61,
+      6
+     ],
+     "low bird": [
+      15,
+      2
+     ],
+     "small cactus": [
+      47,
+      1
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 7173,
+   "seconds": 27.7
+  },
+  {
+   "arm": "lora",
+   "seed": 3,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.18,
+     "clear_rate": 0.6667
+    },
+    {
+     "deaths_per_min": 9.54,
+     "clear_rate": 0.6467
+    },
+    {
+     "deaths_per_min": 8.28,
+     "clear_rate": 0.731
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 150,
+    "cleared": 324,
+    "deaths_per_min": 9.0,
+    "clear_rate": 0.6835,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      41,
+      19
+     ],
+     "2 small cacti": [
+      33,
+      19
+     ],
+     "3 large cacti": [
+      29,
+      19
+     ],
+     "3 small cacti": [
+      47,
+      27
+     ],
+     "bird at head height": [
+      11,
+      13
+     ],
+     "high bird": [
+      14,
+      12
+     ],
+     "large cactus": [
+      65,
+      23
+     ],
+     "low bird": [
+      20,
+      3
+     ],
+     "small cactus": [
+      64,
+      15
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 3.3,
+    "clear_rate": 0.9191,
+    "oracle_agreement": 0.7709,
+    "by_type": {
+     "2 large cacti": [
+      56,
+      3
+     ],
+     "2 small cacti": [
+      66,
+      1
+     ],
+     "3 large cacti": [
+      55,
+      2
+     ],
+     "3 small cacti": [
+      54,
+      0
+     ],
+     "bird at head height": [
+      6,
+      12
+     ],
+     "high bird": [
+      14,
+      0
+     ],
+     "large cactus": [
+      61,
+      4
+     ],
+     "low bird": [
+      16,
+      3
+     ],
+     "small cactus": [
+      47,
+      8
+     ]
+    }
+   },
+   "learner": {
+    "updates": 35,
+    "published": 5,
+    "rejected": 30,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 22.4
+  },
+  {
+   "arm": "lora+map",
+   "seed": 3,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.3,
+     "clear_rate": 0.8214
+    },
+    {
+     "deaths_per_min": 5.58,
+     "clear_rate": 0.8517
+    },
+    {
+     "deaths_per_min": 3.06,
+     "clear_rate": 0.9331
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 83,
+    "cleared": 576,
+    "deaths_per_min": 4.98,
+    "clear_rate": 0.8741,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      66,
+      9
+     ],
+     "2 small cacti": [
+      79,
+      6
+     ],
+     "3 large cacti": [
+      50,
+      30
+     ],
+     "3 small cacti": [
+      83,
+      9
+     ],
+     "bird at head height": [
+      30,
+      7
+     ],
+     "high bird": [
+      45,
+      9
+     ],
+     "large cactus": [
+      99,
+      6
+     ],
+     "low bird": [
+      35,
+      2
+     ],
+     "small cactus": [
+      89,
+      5
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 0.0,
+    "clear_rate": 1.0,
+    "oracle_agreement": 0.6887,
+    "by_type": {
+     "2 large cacti": [
+      66,
+      0
+     ],
+     "2 small cacti": [
+      69,
+      0
+     ],
+     "3 large cacti": [
+      73,
+      0
+     ],
+     "3 small cacti": [
+      73,
+      0
+     ],
+     "bird at head height": [
+      60,
+      0
+     ],
+     "high bird": [
+      55,
+      0
+     ],
+     "large cactus": [
+      83,
+      0
+     ],
+     "low bird": [
+      64,
+      0
+     ],
+     "small cactus": [
+      69,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 52,
+    "published": 5,
+    "rejected": 47,
+    "rollbacks": 3
+   },
+   "map_rows": 8371,
+   "seconds": 48.0
+  },
+  {
+   "arm": "lora+map+distill",
+   "seed": 3,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.48,
+     "clear_rate": 0.8085
+    },
+    {
+     "deaths_per_min": 5.4,
+     "clear_rate": 0.8578
+    },
+    {
+     "deaths_per_min": 3.96,
+     "clear_rate": 0.9079
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 88,
+    "cleared": 550,
+    "deaths_per_min": 5.28,
+    "clear_rate": 0.8621,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      67,
+      12
+     ],
+     "2 small cacti": [
+      75,
+      9
+     ],
+     "3 large cacti": [
+      58,
+      20
+     ],
+     "3 small cacti": [
+      83,
+      12
+     ],
+     "bird at head height": [
+      22,
+      11
+     ],
+     "high bird": [
+      38,
+      4
+     ],
+     "large cactus": [
+      91,
+      7
+     ],
+     "low bird": [
+      32,
+      4
+     ],
+     "small cactus": [
+      84,
+      9
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 0.9,
+    "clear_rate": 0.983,
+    "oracle_agreement": 0.781,
+    "by_type": {
+     "2 large cacti": [
+      63,
+      0
+     ],
+     "2 small cacti": [
+      63,
+      0
+     ],
+     "3 large cacti": [
+      62,
+      2
+     ],
+     "3 small cacti": [
+      68,
+      1
+     ],
+     "bird at head height": [
+      36,
+      6
+     ],
+     "high bird": [
+      49,
+      0
+     ],
+     "large cactus": [
+      76,
+      0
+     ],
+     "low bird": [
+      45,
+      0
+     ],
+     "small cactus": [
+      59,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 49,
+    "published": 3,
+    "rejected": 46,
+    "rollbacks": 0
+   },
+   "map_rows": 7991,
+   "seconds": 54.9
+  },
+  {
+   "arm": "lora-ungated",
+   "seed": 3,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.18,
+     "clear_rate": 0.6645
+    },
+    {
+     "deaths_per_min": 9.72,
+     "clear_rate": 0.625
+    },
+    {
+     "deaths_per_min": 8.64,
+     "clear_rate": 0.7091
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 153,
+    "cleared": 308,
+    "deaths_per_min": 9.18,
+    "clear_rate": 0.6681,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      35,
+      21
+     ],
+     "2 small cacti": [
+      49,
+      15
+     ],
+     "3 large cacti": [
+      28,
+      29
+     ],
+     "3 small cacti": [
+      48,
+      28
+     ],
+     "bird at head height": [
+      3,
+      12
+     ],
+     "high bird": [
+      14,
+      9
+     ],
+     "large cactus": [
+      61,
+      23
+     ],
+     "low bird": [
+      17,
+      4
+     ],
+     "small cactus": [
+      53,
+      12
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 3.1,
+    "clear_rate": 0.9264,
+    "oracle_agreement": 0.7163,
+    "by_type": {
+     "2 large cacti": [
+      67,
+      1
+     ],
+     "2 small cacti": [
+      69,
+      0
+     ],
+     "3 large cacti": [
+      49,
+      5
+     ],
+     "3 small cacti": [
+      54,
+      0
+     ],
+     "bird at head height": [
+      8,
+      10
+     ],
+     "high bird": [
+      22,
+      1
+     ],
+     "large cactus": [
+      66,
+      0
+     ],
+     "low bird": [
+      16,
+      1
+     ],
+     "small cactus": [
+      39,
+      13
+     ]
+    }
+   },
+   "learner": {
+    "updates": 37,
+    "published": 37,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 21.8
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 3,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.38,
+     "clear_rate": 0.767
+    },
+    {
+     "deaths_per_min": 10.26,
+     "clear_rate": 0.587
+    },
+    {
+     "deaths_per_min": 11.16,
+     "clear_rate": 0.504
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 160,
+    "cleared": 279,
+    "deaths_per_min": 9.6,
+    "clear_rate": 0.6355,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      43,
+      18
+     ],
+     "2 small cacti": [
+      30,
+      22
+     ],
+     "3 large cacti": [
+      23,
+      25
+     ],
+     "3 small cacti": [
+      44,
+      28
+     ],
+     "bird at head height": [
+      9,
+      10
+     ],
+     "high bird": [
+      15,
+      9
+     ],
+     "large cactus": [
+      57,
+      19
+     ],
+     "low bird": [
+      9,
+      6
+     ],
+     "small cactus": [
+      49,
+      23
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 8.7,
+    "clear_rate": 0.6882,
+    "oracle_agreement": 0.8587,
+    "by_type": {
+     "2 large cacti": [
+      13,
+      25
+     ],
+     "2 small cacti": [
+      33,
+      4
+     ],
+     "3 large cacti": [
+      12,
+      21
+     ],
+     "3 small cacti": [
+      27,
+      3
+     ],
+     "high bird": [
+      15,
+      0
+     ],
+     "large cactus": [
+      45,
+      14
+     ],
+     "low bird": [
+      5,
+      12
+     ],
+     "small cactus": [
+      27,
+      8
+     ],
+     "bird at head height": [
+      15,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 35,
+    "published": 35,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 19.0
+  },
+  {
+   "arm": "frozen",
+   "seed": 4,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.72,
+     "clear_rate": 0.6143
+    },
+    {
+     "deaths_per_min": 10.26,
+     "clear_rate": 0.5929
+    },
+    {
+     "deaths_per_min": 8.64,
+     "clear_rate": 0.6779
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 159,
+    "cleared": 270,
+    "deaths_per_min": 9.54,
+    "clear_rate": 0.6294,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      32,
+      19
+     ],
+     "2 small cacti": [
+      35,
+      19
+     ],
+     "3 large cacti": [
+      44,
+      16
+     ],
+     "3 small cacti": [
+      38,
+      24
+     ],
+     "bird at head height": [
+      14,
+      13
+     ],
+     "high bird": [
+      23,
+      0
+     ],
+     "large cactus": [
+      35,
+      40
+     ],
+     "low bird": [
+      14,
+      3
+     ],
+     "small cactus": [
+      35,
+      25
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 7.9,
+    "clear_rate": 0.7285,
+    "oracle_agreement": 0.9229,
+    "by_type": {
+     "2 large cacti": [
+      27,
+      15
+     ],
+     "2 small cacti": [
+      28,
+      8
+     ],
+     "3 large cacti": [
+      24,
+      11
+     ],
+     "3 small cacti": [
+      25,
+      14
+     ],
+     "high bird": [
+      11,
+      0
+     ],
+     "large cactus": [
+      50,
+      14
+     ],
+     "low bird": [
+      6,
+      9
+     ],
+     "small cactus": [
+      37,
+      6
+     ],
+     "bird at head height": [
+      4,
+      2
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 0,
+   "seconds": 13.0
+  },
+  {
+   "arm": "map",
+   "seed": 4,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.92,
+     "clear_rate": 0.7486
+    },
+    {
+     "deaths_per_min": 6.48,
+     "clear_rate": 0.82
+    },
+    {
+     "deaths_per_min": 5.22,
+     "clear_rate": 0.8705
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 109,
+    "cleared": 490,
+    "deaths_per_min": 6.54,
+    "clear_rate": 0.818,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      53,
+      13
+     ],
+     "2 small cacti": [
+      68,
+      10
+     ],
+     "3 large cacti": [
+      54,
+      20
+     ],
+     "3 small cacti": [
+      54,
+      18
+     ],
+     "bird at head height": [
+      33,
+      11
+     ],
+     "high bird": [
+      33,
+      4
+     ],
+     "large cactus": [
+      92,
+      17
+     ],
+     "low bird": [
+      30,
+      8
+     ],
+     "small cactus": [
+      73,
+      8
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 3.0,
+    "clear_rate": 0.9372,
+    "oracle_agreement": 0.8484,
+    "by_type": {
+     "2 large cacti": [
+      49,
+      7
+     ],
+     "2 small cacti": [
+      65,
+      2
+     ],
+     "3 large cacti": [
+      51,
+      9
+     ],
+     "3 small cacti": [
+      61,
+      5
+     ],
+     "bird at head height": [
+      31,
+      1
+     ],
+     "high bird": [
+      39,
+      0
+     ],
+     "large cactus": [
+      73,
+      1
+     ],
+     "low bird": [
+      27,
+      5
+     ],
+     "small cactus": [
+      52,
+      0
+     ]
+    }
+   },
+   "learner": null,
+   "map_rows": 7272,
+   "seconds": 27.6
+  },
+  {
+   "arm": "lora",
+   "seed": 4,
+   "train_phases": [
+    {
+     "deaths_per_min": 9.18,
+     "clear_rate": 0.66
+    },
+    {
+     "deaths_per_min": 9.9,
+     "clear_rate": 0.6259
+    },
+    {
+     "deaths_per_min": 9.0,
+     "clear_rate": 0.6689
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 156,
+    "cleared": 292,
+    "deaths_per_min": 9.36,
+    "clear_rate": 0.6518,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      35,
+      21
+     ],
+     "2 small cacti": [
+      46,
+      14
+     ],
+     "3 large cacti": [
+      31,
+      20
+     ],
+     "3 small cacti": [
+      42,
+      20
+     ],
+     "bird at head height": [
+      5,
+      20
+     ],
+     "high bird": [
+      22,
+      7
+     ],
+     "large cactus": [
+      60,
+      30
+     ],
+     "low bird": [
+      13,
+      7
+     ],
+     "small cactus": [
+      38,
+      17
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 2.3,
+    "clear_rate": 0.9484,
+    "oracle_agreement": 0.7735,
+    "by_type": {
+     "2 large cacti": [
+      64,
+      8
+     ],
+     "2 small cacti": [
+      75,
+      0
+     ],
+     "3 large cacti": [
+      53,
+      1
+     ],
+     "3 small cacti": [
+      62,
+      5
+     ],
+     "bird at head height": [
+      6,
+      4
+     ],
+     "high bird": [
+      8,
+      3
+     ],
+     "large cactus": [
+      81,
+      0
+     ],
+     "low bird": [
+      13,
+      2
+     ],
+     "small cactus": [
+      61,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 34,
+    "published": 5,
+    "rejected": 29,
+    "rollbacks": 1
+   },
+   "map_rows": 0,
+   "seconds": 22.9
+  },
+  {
+   "arm": "lora+map",
+   "seed": 4,
+   "train_phases": [
+    {
+     "deaths_per_min": 5.58,
+     "clear_rate": 0.8488
+    },
+    {
+     "deaths_per_min": 5.94,
+     "clear_rate": 0.8382
+    },
+    {
+     "deaths_per_min": 3.6,
+     "clear_rate": 0.9187
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 84,
+    "cleared": 571,
+    "deaths_per_min": 5.04,
+    "clear_rate": 0.8718,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      83,
+      11
+     ],
+     "2 small cacti": [
+      82,
+      6
+     ],
+     "3 large cacti": [
+      64,
+      14
+     ],
+     "3 small cacti": [
+      77,
+      12
+     ],
+     "bird at head height": [
+      30,
+      20
+     ],
+     "high bird": [
+      35,
+      4
+     ],
+     "large cactus": [
+      82,
+      10
+     ],
+     "low bird": [
+      31,
+      3
+     ],
+     "small cactus": [
+      87,
+      4
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 1.3,
+    "clear_rate": 0.9732,
+    "oracle_agreement": 0.728,
+    "by_type": {
+     "2 large cacti": [
+      62,
+      1
+     ],
+     "2 small cacti": [
+      65,
+      0
+     ],
+     "3 large cacti": [
+      60,
+      5
+     ],
+     "3 small cacti": [
+      59,
+      2
+     ],
+     "bird at head height": [
+      29,
+      4
+     ],
+     "high bird": [
+      41,
+      0
+     ],
+     "large cactus": [
+      66,
+      1
+     ],
+     "low bird": [
+      34,
+      0
+     ],
+     "small cactus": [
+      56,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 52,
+    "published": 11,
+    "rejected": 41,
+    "rollbacks": 0
+   },
+   "map_rows": 8271,
+   "seconds": 47.5
+  },
+  {
+   "arm": "lora+map+distill",
+   "seed": 4,
+   "train_phases": [
+    {
+     "deaths_per_min": 6.48,
+     "clear_rate": 0.8125
+    },
+    {
+     "deaths_per_min": 3.6,
+     "clear_rate": 0.916
+    },
+    {
+     "deaths_per_min": 4.32,
+     "clear_rate": 0.8987
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 80,
+    "cleared": 587,
+    "deaths_per_min": 4.8,
+    "clear_rate": 0.8801,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      63,
+      10
+     ],
+     "2 small cacti": [
+      90,
+      10
+     ],
+     "3 large cacti": [
+      78,
+      10
+     ],
+     "3 small cacti": [
+      81,
+      9
+     ],
+     "bird at head height": [
+      39,
+      11
+     ],
+     "high bird": [
+      37,
+      9
+     ],
+     "large cactus": [
+      91,
+      12
+     ],
+     "low bird": [
+      41,
+      2
+     ],
+     "small cactus": [
+      67,
+      7
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 0.5,
+    "clear_rate": 0.9909,
+    "oracle_agreement": 0.665,
+    "by_type": {
+     "2 large cacti": [
+      64,
+      3
+     ],
+     "2 small cacti": [
+      65,
+      1
+     ],
+     "3 large cacti": [
+      68,
+      1
+     ],
+     "3 small cacti": [
+      66,
+      0
+     ],
+     "bird at head height": [
+      38,
+      0
+     ],
+     "high bird": [
+      47,
+      0
+     ],
+     "large cactus": [
+      85,
+      0
+     ],
+     "low bird": [
+      48,
+      0
+     ],
+     "small cactus": [
+      64,
+      0
+     ]
+    }
+   },
+   "learner": {
+    "updates": 52,
+    "published": 14,
+    "rejected": 38,
+    "rollbacks": 0
+   },
+   "map_rows": 8255,
+   "seconds": 56.6
+  },
+  {
+   "arm": "lora-ungated",
+   "seed": 4,
+   "train_phases": [
+    {
+     "deaths_per_min": 7.74,
+     "clear_rate": 0.7485
+    },
+    {
+     "deaths_per_min": 8.82,
+     "clear_rate": 0.6994
+    },
+    {
+     "deaths_per_min": 10.08,
+     "clear_rate": 0.5942
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 148,
+    "cleared": 324,
+    "deaths_per_min": 8.88,
+    "clear_rate": 0.6864,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      40,
+      17
+     ],
+     "2 small cacti": [
+      44,
+      13
+     ],
+     "3 large cacti": [
+      38,
+      25
+     ],
+     "3 small cacti": [
+      51,
+      17
+     ],
+     "bird at head height": [
+      9,
+      14
+     ],
+     "high bird": [
+      10,
+      21
+     ],
+     "large cactus": [
+      68,
+      20
+     ],
+     "low bird": [
+      12,
+      4
+     ],
+     "small cactus": [
+      52,
+      17
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 4.7,
+    "clear_rate": 0.8779,
+    "oracle_agreement": 0.7953,
+    "by_type": {
+     "2 large cacti": [
+      55,
+      3
+     ],
+     "2 small cacti": [
+      39,
+      11
+     ],
+     "3 large cacti": [
+      36,
+      9
+     ],
+     "3 small cacti": [
+      47,
+      1
+     ],
+     "bird at head height": [
+      16,
+      5
+     ],
+     "high bird": [
+      25,
+      6
+     ],
+     "large cactus": [
+      48,
+      2
+     ],
+     "low bird": [
+      26,
+      2
+     ],
+     "small cactus": [
+      46,
+      8
+     ]
+    }
+   },
+   "learner": {
+    "updates": 36,
+    "published": 36,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 20.8
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 4,
+   "train_phases": [
+    {
+     "deaths_per_min": 10.62,
+     "clear_rate": 0.5564
+    },
+    {
+     "deaths_per_min": 11.7,
+     "clear_rate": 0.4444
+    },
+    {
+     "deaths_per_min": 11.52,
+     "clear_rate": 0.4483
+    }
+   ],
+   "train": {
+    "frames": 60000,
+    "deaths": 188,
+    "cleared": 178,
+    "deaths_per_min": 11.28,
+    "clear_rate": 0.4863,
+    "oracle_agreement": null,
+    "by_type": {
+     "2 large cacti": [
+      19,
+      20
+     ],
+     "2 small cacti": [
+      26,
+      19
+     ],
+     "3 large cacti": [
+      11,
+      35
+     ],
+     "3 small cacti": [
+      20,
+      32
+     ],
+     "bird at head height": [
+      5,
+      12
+     ],
+     "high bird": [
+      6,
+      15
+     ],
+     "large cactus": [
+      44,
+      31
+     ],
+     "low bird": [
+      13,
+      4
+     ],
+     "small cactus": [
+      34,
+      20
+     ]
+    }
+   },
+   "eval": {
+    "deaths_per_min": 11.6,
+    "clear_rate": 0.4082,
+    "oracle_agreement": 0.8579,
+    "by_type": {
+     "2 large cacti": [
+      17,
+      16
+     ],
+     "2 small cacti": [
+      9,
+      17
+     ],
+     "3 large cacti": [
+      1,
+      24
+     ],
+     "3 small cacti": [
+      6,
+      18
+     ],
+     "large cactus": [
+      18,
+      18
+     ],
+     "low bird": [
+      3,
+      10
+     ],
+     "small cactus": [
+      18,
+      5
+     ],
+     "bird at head height": [
+      1,
+      7
+     ],
+     "high bird": [
+      7,
+      1
+     ]
+    }
+   },
+   "learner": {
+    "updates": 28,
+    "published": 28,
+    "rejected": 0,
+    "rollbacks": 0
+   },
+   "map_rows": 0,
+   "seconds": 14.9
+  }
+ ]
+}

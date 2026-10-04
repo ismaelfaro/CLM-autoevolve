@@ -38,7 +38,17 @@ an episode (cleared = success, crash = failure). The base head knows only an eas
 cacti). The online phase is 60k frames on one course, and evaluation is greedy on 5 unseen
 courses. CPU stand-in encoder, 5 seeds: see [docs/RESEARCH.md §8](docs/RESEARCH.md#8-t-rex-testbed-results).
 
-TREX_TABLE
+| Arm | Deaths / min | Obstacles cleared | Low birds cleared (new to the base) |
+|---|---|---|---|
+| Frozen base | 8.00 ± 0.61 | 72.6% | 50% |
+| Outcome map only (no training) | 4.12 ± 1.52 | 89.4% | 78% |
+| Gated LoRA | 2.82 ± 1.06 | 93.3% | 95% |
+| **Outcome map + gated LoRA** | **0.80 ± 0.43** | **98.5%** | **100%** |
+| Reward ignored (every executed step a positive, ungated) | 9.86 ± 1.12 | 58.1% | 54% |
+
+The map and the LoRA add up (10× fewer deaths than the base), the largest gains are on obstacle
+types the base never saw, and learning from the system's own choices *without* the outcome is
+worse than not learning at all.
 
 ## Quickstart
 
@@ -97,6 +107,9 @@ Research prototype. The T-Rex and synthetic results use a CPU stand-in encoder, 
 show the mechanics work and how the pieces compare. They are not a claim about CLM-8B's numbers.
 The next step is Phase 0 in the research note: the same outcome-aware training on CLM's published
 DeepSWE embeddings, which already carry per-step rewards, against its 81.6% best-of-N result.
+Those embeddings and the reference head are on the Hugging Face Hub (`Contrastive-LM/*`). Only the
+heads train, so Phase 0 needs no encoder or GPU, just network access to `huggingface.co` (and its
+file-download hosts) from wherever it runs.
 
 ## License
 

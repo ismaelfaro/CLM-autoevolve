@@ -11,7 +11,32 @@ Read against CLM `main` as of 2026-10-04; the prototype and testbed are in this 
 
 ## 1. Summary
 
-SUMMARY_RESULTS
+**Using the reward to keep CLM learning makes sense, and it works in the testbed.** On CLM's own
+T-Rex game, with a prompt that does not give the answer away, a base head that knew only single
+cacti learned from its own obstacle clears and crashes:
+
+| (5 seeds, unseen courses) | Deaths / min | Obstacles cleared |
+|---|---|---|
+| Frozen base | 8.00 ± 0.61 | 72.6% |
+| + outcome map (no training) | 4.12 ± 1.52 | 89.4% |
+| + gated LoRA | 2.82 ± 1.06 | 93.3% |
+| **+ outcome map + gated LoRA** | **0.80 ± 0.43** | **98.5%** |
+| Reward ignored (every step a positive) | 9.86 ± 1.12 | 58.1% |
+
+Two mechanisms, complementary:
+
+* **The outcome map**: the distribution of past successes and failures over (state, action), per
+  task and across similar tasks, kept in CLM's frozen encoder space. It enters CLM's contrast as
+  an evidence-weighted logit correction, at once and without training (§4).
+* **LoRA on the projection heads**, trained on outcomes (cross-entropy on successes,
+  unlikelihood on failures), gated against the served adapter, and published as a merged
+  standard checkpoint that `clm-serve` hot-reloads (§5–6).
+
+The controls matter as much as the wins. **Learning from the system's own choices without the
+outcome makes it worse than not learning** (T-Rex 8.0 → 9.9 deaths/min; the toy collapses from
+0.59 to 0.35 accuracy). Labelling every step of a failed episode as a failure is also worse
+than frozen in the toy. Outcome labels, credit assignment and a gate are the requirements
+(§2, §8, §9).
 
 **Why it is cheap for CLM specifically.** CLM is a *frozen* Qwen3-8B encoder plus two small
 trainable projection heads (~19M parameters, the 75 MB reference checkpoint). Everything here
@@ -262,7 +287,57 @@ every life. The planner is used only as an evaluation oracle and to build the ba
 * **Evaluation**: greedy, no learning, map frozen, on 5 **unseen** courses × 2 minutes.
 * 5 seeds (base head, training course and initialisation differ per seed).
 
-TREX_RESULTS
+**Results** (mean ± std over 5 seeds; evaluation on unseen courses, 10 game-minutes per arm and
+seed; "clear rate" = obstacles cleared / obstacles met):
+
+| Arm | Eval deaths / min | Eval clear rate | Train clear rate (first → last third) | Planner agreement | Updates promoted / rejected |
+|---|---|---|---|---|---|
+| frozen base | 8.00 ± 0.61 | 72.6 ± 3.6% | 71.6 → 71.0% | 92.1% | – |
+| outcome map only (no training) | 4.12 ± 1.52 | 89.4 ± 5.4% | 77.9 → 82.2% | 90.2% | – |
+| LoRA (gated) | 2.82 ± 1.06 | 93.3 ± 2.8% | 67.7 → 72.0% | 80.4% | 6 / 31 |
+| **LoRA + map** | **0.80 ± 0.43** | **98.5 ± 0.9%** | 78.8 → 89.5% | 70.2% | 10 / 41 |
+| LoRA + map + distill | 0.94 ± 0.26 | 98.3 ± 0.5% | 79.3 → 89.9% | 73.6% | 7 / 43 |
+| LoRA, ungated | 3.06 ± 0.94 | 92.7 ± 2.8% | 66.9 → 67.1% | 75.2% | 37 / 0 |
+| all-positive, ungated (reward ignored) | 9.86 ± 1.12 | 58.1 ± 10.4% | 64.6 → 55.3% | 85.0% | 34 / 0 |
+
+Clear rate by obstacle type on the unseen courses (all seeds pooled); the base head never saw
+groups or birds:
+
+| Obstacle | frozen | map only | LoRA | LoRA + map |
+|---|---|---|---|---|
+| single cacti (seen by the base) | 78–81% | 94–96% | 92–98% | 100% |
+| 2 large cacti | 72% | 89% | 94% | 98% |
+| 3 large cacti | 51% | 81% | 89% | 96% |
+| low bird (must jump) | 50% | 78% | 95% | 100% |
+| bird at head height (must duck) | 78% | 86% | 72% | 98% |
+| high bird (run under) | 100% | 100% | 89% | 100% |
+
+What it shows:
+
+1. **Learning from success and failure works, and the two systems add up.** The map alone
+   (instant, no gradient) halves deaths (8.0 → 4.1/min). The gated LoRA alone cuts them to
+   2.8/min. Together: **0.8/min, ten times fewer deaths than the frozen base**, with the lowest
+   spread between seeds. The map acts from the first failures; the LoRA generalises what was learned.
+2. **The gains are largest where the base had no knowledge**: groups and birds, the
+   "similar but new tasks". Low birds go from 50% to 100% cleared, 3 large cacti from 51% to 96%.
+3. **Ignoring the outcome is harmful.** Learning from every executed step as if it were right
+   (what `train/finetune.py`'s loss does with failed trajectories) ends *worse than not
+   learning*: 9.9 vs 8.0 deaths/min, and it degrades during training (64.6% → 55.3%).
+4. **The gate's value here is mainly protection.** For outcome-labelled LoRA, gated and ungated
+   end within noise (2.8 vs 3.1/min). The gate matters when updates can be harmful (the toy's
+   all-positive arm: 59/60 rejected), and it costs nothing when they are good.
+5. **Distillation from the map did not add to LoRA + map on average** (0.94 vs 0.80, within
+   noise; lower variance). Its expected benefit is generalisation where the map has no
+   evidence. With the map present at evaluation that is hard to see, so test it with the map
+   switched off at evaluation, or on held-out obstacle types.
+6. **Agreement with the planner falls as survival rises** (92% → 70%). The planner's "best" is one
+   good action among several (e.g. jump early vs late). The learned policy finds others that
+   work, so agreement with one oracle is not a quality measure; outcome is.
+
+Caveats: a CPU hash encoder stands in for Qwen3-8B, and state texts are bucketed ("about 100 px"),
+so exact state revisits across courses are common. That flatters the non-parametric map more
+than open-ended states would. The base head is a stand-in for CLM, not CLM. Training-phase rates
+include exploration (sampling, ε = 0.05). Raw data: `experiments/results/trex_online.json`.
 
 ---
 
