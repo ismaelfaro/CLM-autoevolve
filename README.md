@@ -50,22 +50,49 @@ The map and the LoRA add up (10× fewer deaths than the base), the largest gains
 types the base never saw, and learning from the system's own choices *without* the outcome is
 worse than not learning at all.
 
+## Run on Google Colab
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ismaelfaro/CLM-autoevolve/blob/claude/clm-online-lora-research/notebooks/CLM_autoevolve_colab.ipynb)
+
+[`notebooks/CLM_autoevolve_colab.ipynb`](notebooks/CLM_autoevolve_colab.ipynb) runs everything end to end:
+
+| Part | What | Runtime |
+|---|---|---|
+| 0 | Setup + unit tests | any |
+| A | T-Rex testbed, CPU stand-in encoder (outcome map + gated LoRA vs frozen) | any |
+| B | Synthetic toy: which objectives work | any |
+| C | **T-Rex with the real CLM-8B**: Qwen3-8B in-process (`--encoder hf`) + the released head | GPU ≥ 24 GB (L4 / A100) |
+| D | **Phase 0, DeepSWE**: retrain the verifier head with the reward in the loop; CLM's own `bon_eval.py` vs the published 31/38 | GPU recommended |
+
+Set `QUICK = True` in the first cell for a fast smoke run of every part. Parts C and D have not been run
+yet; their numbers will be new results.
+
 ## Quickstart
 
 ```bash
 pip install torch numpy pytest
 pip install --no-deps contrastive-lm     # only clm.heads is needed on CPU; full install for serving
-python -m pytest -q tests                # 20 tests: LoRA export through clm.heads.HeadPair, map, gate, testbed
+python -m pytest -q tests                # 22 tests: LoRA export through clm.heads.HeadPair, map, gate, testbed, Phase 0
 
 python testbeds/trex/run_online.py                       # T-Rex, CPU, ~20 min for 7 arms x 5 seeds
 python testbeds/trex/run_online.py --seeds 0 --arms frozen map lora+map --train-frames 30000   # quick look
 python experiments/synthetic_online.py --seeds 0 1 2     # toy bandit world, objectives compared
 ```
 
-With the real CLM-8B (GPU, vLLM encoder running as in the CLM README):
+With the real CLM-8B (GPU): Qwen3-8B in-process, or behind a vLLM server as in the CLM README:
 
 ```bash
-python testbeds/trex/run_online.py --encoder clm --ckpt "$(clm-download)" --seeds 0
+python testbeds/trex/run_online.py --encoder hf --seeds 0                     # transformers, no server
+python testbeds/trex/run_online.py --encoder clm --ckpt "$(clm-download)"    # vLLM pooling server on :8090
+```
+
+Phase 0 on DeepSWE (published embeddings from the Hugging Face Hub; only the heads train):
+
+```bash
+python experiments/deepswe_outcome.py --emb-dir data/deepswe_train --init-ckpt "$(clm-download)" \
+    --holdout-tasks heads/deepswe/heldout_tasks.json --objective outcome --out-dir runs/phase0/outcome
+python <CLM>/evaluation/bon_eval.py --hf-dataset Contrastive-LM/deepswe-clm-embeddings-8k \
+    --checkpoint runs/phase0/outcome/best_head.pt --tasks-file heads/deepswe/heldout_tasks.json --n 4 --window 12
 ```
 
 Serving a learned head next to the base one:
@@ -95,9 +122,11 @@ buffer = ExperienceBuffer(strategy="terminal", window=8)
 | `autoevolve/objectives.py` | `outcome_ce`, `outcome_infonce`, `map_distill`, `bandit_ppo`, `pairwise_dpo`, `anchor_kl`, `replay_infonce` |
 | `autoevolve/experience.py` | `Decision`, credit assignment (`all` / `terminal` / `discounted` / dense step rewards), `ExperienceBuffer` |
 | `autoevolve/learner.py` | `OnlineLearner`: candidate vs served adapter, gate, rollback, versioned publish; `snips` evaluator |
-| `autoevolve/encoders.py` | `ClmEncoder` (Qwen3-8B via vLLM, as CLM serves) and `HashEncoder` (CPU stand-in) |
+| `autoevolve/encoders.py` | `ClmEncoder` (Qwen3-8B via vLLM, as CLM serves), `TransformersEncoder` (Qwen3-8B in-process) and `HashEncoder` (CPU stand-in) |
 | `testbeds/trex/` | Headless T-Rex (engine and planner vendored from CLM, Apache-2.0), `run_online.py` experiment |
 | `experiments/synthetic_online.py` | Toy contextual-bandit world for comparing objectives |
+| `experiments/deepswe_outcome.py` | Phase 0: DeepSWE head retrained with the reward (CLM loss control vs per-task pass/fail contrast) |
+| `notebooks/CLM_autoevolve_colab.ipynb` | Everything above on Google Colab |
 | `experiments/results/` | JSON results of the runs reported in the docs |
 | `docs/RESEARCH.md` | The research note |
 

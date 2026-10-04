@@ -389,6 +389,10 @@ This validates mechanics on a toy, not CLM-8B numbers.
 
 ### Phase 0: offline on DeepSWE (highest value per hour)
 
+Ready to run: `experiments/deepswe_outcome.py`, Part D of `notebooks/CLM_autoevolve_colab.ipynb`. It has been
+checked end to end on a synthetic dataset in the exact CLM format (CLM's `bon_eval.py` scores its export
+unchanged); it has not yet been run on the real embeddings.
+
 `Contrastive-LM/deepswe-clm-embeddings-8k` metadata carries `reward` per step, and tasks have both
 passing and failing trajectories, so same-`(task, step)` hard negatives exist.
 
@@ -408,8 +412,9 @@ vs batch training, plus forgetting.
 
 ### Phase 2: live loops with the real encoder
 
-* `python testbeds/trex/run_online.py --encoder clm --ckpt "$(clm-download)"`: the same arms with
-  Qwen3-8B embeddings and the released head as the base (zero-shot, neutral prompt).
+* `python testbeds/trex/run_online.py --encoder hf` (Qwen3-8B in-process; Part C of the Colab notebook)
+  or `--encoder clm` (vLLM server): the same arms with Qwen3-8B embeddings and the released head as the
+  base (zero-shot, neutral prompt).
 * Typed decisions as a bandit (`LocalLLaMA/typed-decisions`): reveal reward only for the chosen
   option; compare `outcome_ce`, `bandit_ppo`, map + LoRA and full-information fine-tuning
   (upper bound).
