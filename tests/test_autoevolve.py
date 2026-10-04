@@ -8,7 +8,9 @@ import torch.nn.functional as F
 
 from clm.heads import HeadPair, make_head
 
-from autoevolve import Decision, ExperienceBuffer, LearnerConfig, LoRAHeads, OnlineLearner, assign_credit
+from autoevolve import (Decision, ExperienceBuffer, HashEncoder, LearnerConfig, LoRAHeads, OnlineLearner, OutcomeMap,
+                        assign_credit, snips)
+from autoevolve.experience import Labeled
 from autoevolve import objectives as obj
 from autoevolve.lora import atomic_save, random_checkpoint
 
@@ -148,17 +150,101 @@ def test_bandit_ppo_raises_prob_of_rewarded_action(ckpt):
     assert p1[2] > p0[2]
 
 
-def test_gate_rolls_back_a_worse_update(ckpt, tmp_path):
+def test_gate_promotes_only_a_better_candidate(ckpt, tmp_path):
     lr = OnlineLearner(ckpt, str(tmp_path / "h.pt"), LearnerConfig(rank=4))
-    scores = iter([0.5, 0.4])                  # the candidate is scored first, then the base adapter
     _perturb(lr.model)
-    assert lr.maybe_publish(lambda _: next(scores)) is True
-    good = lr.model.adapter_state()
-    _perturb(lr.model, seed=9)
-    assert lr.maybe_publish(lambda _: 0.1) is False
-    for k, v in lr.model.adapter_state().items():
-        assert torch.equal(v, good[k])         # rolled back to the last promoted adapter
+    score = lambda m: float(m.adapter_state()["state_head.inp.lora_B"].abs().sum())  # noqa: E731
+    assert lr.maybe_publish(score) is True                    # perturbed beats the zero adapter
+    assert torch.equal(lr.serving.adapter_state()["state_head.inp.lora_B"],
+                       lr.model.adapter_state()["state_head.inp.lora_B"])
     assert (tmp_path / "h.pt").exists() and (tmp_path / "versions" / "adapter_v0001.pt").exists()
+    served = lr.serving.adapter_state()
+    with torch.no_grad():
+        for n, p in lr.model.named_parameters():
+            if "lora_B" in n:
+                p.mul_(0.5)                                       # candidate now scores lower
+    assert lr.maybe_publish(score) is False
+    for k, v in lr.serving.adapter_state().items():
+        assert torch.equal(v, served[k])                      # serving untouched
+
+
+def test_gate_rolls_back_after_sustained_regression(ckpt):
+    lr = OnlineLearner(ckpt, None, LearnerConfig(rank=4, rollback_patience=2, rollback_tolerance=0.0))
+    _perturb(lr.model)
+    lr.maybe_publish(lambda m: 1.0 if m is lr.model else 0.0)
+    served = lr.serving.adapter_state()
+    _perturb(lr.model, seed=7)
+    worse = lambda m: 0.0 if m is lr.model else 1.0  # noqa: E731
+    lr.maybe_publish(worse)
+    assert not torch.equal(lr.model.adapter_state()["state_head.inp.lora_B"], served["state_head.inp.lora_B"])
+    lr.maybe_publish(worse)                                   # second bad gate in a row => reset
+    assert lr.stats.rollbacks == 1
+    assert torch.equal(lr.model.adapter_state()["state_head.inp.lora_B"], served["state_head.inp.lora_B"])
+
+
+def test_ungated_updates_go_straight_to_serving(ckpt):
+    lr = OnlineLearner(ckpt, None, LearnerConfig(rank=4, gate=False, losses=("ce",), batch=8, steps_per_update=3,
+                                                 replay_weight=0, kl_weight=0))
+    buf = ExperienceBuffer()
+    rng = np.random.default_rng(0)
+    for e in range(6):
+        buf.record(Decision(f"e{e}", 0, rng.standard_normal(HID), rng.standard_normal((3, HID)), 0,
+                            np.full(3, 1 / 3), group=e))
+        buf.close(f"e{e}", 1.0)
+    lr.update(buf)
+    assert lr.stats.published == 1
+    assert torch.equal(lr.serving.adapter_state()["state_head.inp.lora_B"],
+                       lr.model.adapter_state()["state_head.inp.lora_B"])
+
+
+def test_outcome_map_posterior_and_bias():
+    m = OutcomeMap(dim=4, k=16, tau_state=0.05, tau_action=0.02)
+    s = np.eye(4)[0]; good, bad = np.eye(4)[1], np.eye(4)[2]
+    m.add([s] * 6, [good] * 3 + [bad] * 3, [1, 1, 1, 0, 0, 0], tasks=[0] * 6)
+    q = torch.tensor(s, dtype=torch.float32)[None]
+    c = torch.tensor(np.stack([good, bad, np.eye(4)[3]]), dtype=torch.float32)[None]
+    p, n = m.query(q, c)
+    assert p[0, 0] > 0.75 and p[0, 1] < 0.25 and abs(float(p[0, 2]) - 0.5) < 0.05   # unseen action: prior
+    assert n[0, 0] == pytest.approx(3.0, rel=1e-3) and float(n[0, 2]) < 1e-3
+    b = m.bias(q, c)
+    assert b[0, 0] > 0 > b[0, 1] and abs(float(b[0, 2])) < 1e-2
+    far = torch.tensor(np.eye(4)[3], dtype=torch.float32)[None]
+    assert float(m.query(far, c)[1].max()) < 1e-6           # dissimilar state: no evidence borrowed
+    t, conf = m.soft_targets(q, c, torch.ones(1, 3, dtype=torch.bool))
+    assert t[0].argmax() == 0 and 0 < float(conf[0]) < 1
+
+
+def test_outcome_map_task_bonus_and_ring_buffer():
+    m = OutcomeMap(dim=2, capacity=4, k=8, task_bonus=3.0)
+    s, a = np.array([1.0, 0.0]), np.array([0.0, 1.0])
+    m.add([s, s], [a, a], [1, 0], tasks=[0, 1])
+    q, c = torch.tensor(s, dtype=torch.float32)[None], torch.tensor(a, dtype=torch.float32)[None, None]
+    p0, _ = m.query(q, c, task=torch.tensor([0]))
+    p1, _ = m.query(q, c, task=torch.tensor([1]))
+    assert p0[0, 0] > 0.5 > p1[0, 0]                        # each task leans on its own history
+    m.add([s] * 5, [a] * 5, [0] * 5)
+    assert len(m) == 4 and float(m.query(q, c)[0][0, 0]) < 0.25   # oldest rows overwritten
+
+
+def test_hash_encoder_is_deterministic_and_similarity_aware():
+    e1, e2 = HashEncoder(dim=64), HashEncoder(dim=64)
+    a, b, c = e1.embed(["large cactus ahead, close", "large cactus ahead, far", "bird at head height"])
+    assert np.allclose(a, e2.embed(["large cactus ahead, close"])[0])
+    assert float(a @ b) > float(a @ c)
+
+
+def test_snips_prefers_the_policy_that_picks_successes(ckpt):
+    m = LoRAHeads(ckpt, rank=4).eval()
+    rng = np.random.default_rng(0)
+    items = []
+    for e in range(40):
+        st, cands = rng.standard_normal(HID), rng.standard_normal((3, HID))
+        ch = int(rng.integers(3))
+        d = Decision(f"e{e}", 0, st, cands, ch, np.full(3, 1 / 3), group=e)
+        items.append(Labeled(d, success=bool(e % 2), weight=1.0))
+    good = lambda b: torch.where(b["success"], 20.0, -20.0)[:, None] * F.one_hot(b["chosen"], 3)  # noqa: E731
+    bad = lambda b: -good(b)  # noqa: E731
+    assert snips(m, items, good) > 0.9 > 0.1 > snips(m, items, bad)
 
 
 def test_learner_update_runs_with_all_losses(ckpt):

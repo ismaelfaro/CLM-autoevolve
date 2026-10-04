@@ -1,13 +1,19 @@
 """The online learner: experience in, gated LoRA updates out, published as a hot-reloadable head.
 
     learner = OnlineLearner(base_ckpt, publish_path="heads/clm-online.pt", replay=(S, A))
-    ... buffer.record(decision) per answer; buffer.close(episode, outcome) per episode ...
-    learner.update(buffer)                       # a few optimiser steps on fresh + replayed steps
-    learner.maybe_publish(eval_fn)               # promote only if the held-out score improves
+    ... act with learner.serving; buffer.record(decision); buffer.close(episode, outcome) ...
+    learner.update(buffer)                       # a few optimiser steps on the *candidate* adapter
+    learner.maybe_publish(evaluate)              # promote the candidate if it beats what is served
+
+Two adapters live side by side.  ``model`` is the candidate and keeps learning across updates, so
+small gains can accumulate.  ``serving`` is what acts and what ``clm-serve`` has.  The gate scores
+both on the *same* held-out data every time.  The candidate is promoted only when it is better.
+It is reset to the served adapter only after ``rollback_patience`` gates in a row where it is
+clearly worse (a sustained regression, not one noisy batch).
 
 ``clm-serve --model clm-online=heads/clm-online.pt`` serves the published head next to
 ``clm-latest``; the server reloads it when the file's mtime changes.  Every promoted adapter is
-kept (``versions/``), so a rollback is publishing an older one.
+kept (``versions/``), so rolling back the *server* is publishing an older one.
 """
 from __future__ import annotations
 
@@ -18,6 +24,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 import torch
+import torch.nn.functional as F
 
 from . import objectives as obj
 from .experience import ExperienceBuffer, Labeled, to_tensors
@@ -36,13 +43,17 @@ class LearnerConfig:
     replay_batch: int = 256           # original-distribution pairs per step (anti-forgetting)
     replay_weight: float = 0.4        # README: 40% Nemotron replay kept hard-negative top-1 at 68.5 vs 56.2
     kl_weight: float = 0.1
-    losses: tuple[str, ...] = ("infonce",)   # any of: infonce, ce, bandit, dpo
+    losses: tuple[str, ...] = ("infonce",)   # any of: infonce, ce, bandit, dpo, distill
     hard_negative_boost: float = 1.0
     bandit_clip: float = 0.2
     dpo_beta: float = 0.1
+    distill_beta: float = 4.0
     use_failures: bool = True         # False: learn from successes only (failures dropped)
     ignore_outcome: bool = False      # True: every executed step is a positive, as train/finetune.py does today
+    gate: bool = True                 # False: every update goes straight to serving
     promote_margin: float = 0.0
+    rollback_tolerance: float = 0.02  # "clearly worse" = below the served score by this much
+    rollback_patience: int = 3
     grad_clip: float = 1.0
     device: str = "cpu"
 
@@ -52,25 +63,33 @@ class LearnerStats:
     updates: int = 0
     published: int = 0
     rejected: int = 0
+    rollbacks: int = 0
     history: list = field(default_factory=list)
 
 
 class OnlineLearner:
     def __init__(self, base_ckpt: dict, publish_path: str | None = None, cfg: LearnerConfig | None = None,
                  replay: tuple[torch.Tensor, torch.Tensor] | None = None,
-                 anchor: tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None = None):
+                 anchor: tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None = None,
+                 outcome_map=None, task_of: Callable | None = None):
         self.cfg = cfg or LearnerConfig()
-        self.model = LoRAHeads(base_ckpt, rank=self.cfg.rank, alpha=self.cfg.alpha).to(self.cfg.device)
-        self.opt = torch.optim.AdamW(self.model.trainable_parameters(), lr=self.cfg.lr,
-                                     weight_decay=self.cfg.weight_decay)
+        mk = lambda: LoRAHeads(base_ckpt, rank=self.cfg.rank, alpha=self.cfg.alpha).to(self.cfg.device)  # noqa: E731
+        self.model, self.serving = mk(), mk().eval()
+        self.serving.load_adapter(self.model.adapter_state())
+        self._new_optimizer()
         self.publish_path = publish_path
         self.replay = replay          # (states [N, d], gold actions [N, d]) from the base training mix
         self.anchor = anchor          # (states [M, d], candidate sets [M, K, d], mask [M, K])
+        self.outcome_map = outcome_map
+        self.task_of = task_of
         self.stats = LearnerStats()
         self.version = 0
-        self.best_adapter = self.model.adapter_state()
-        self.best_score: float | None = None
+        self._bad = 0
         self._g = torch.Generator().manual_seed(0)
+
+    def _new_optimizer(self):
+        self.opt = torch.optim.AdamW(self.model.trainable_parameters(), lr=self.cfg.lr,
+                                     weight_decay=self.cfg.weight_decay)
 
     # ------------------------------------------------------------------ training
     def _replay_batch(self, n):
@@ -81,7 +100,8 @@ class OnlineLearner:
         idx = torch.randint(len(self.anchor[0]), (n,), generator=self._g)
         return tuple(x[idx].to(self.cfg.device) for x in self.anchor)
 
-    def loss(self, batch: dict[str, torch.Tensor], buffer: ExperienceBuffer | None) -> tuple[torch.Tensor, dict]:
+    def loss(self, batch: dict[str, torch.Tensor], buffer: ExperienceBuffer | None,
+             tasks: torch.Tensor | None = None) -> tuple[torch.Tensor, dict]:
         c, m = self.cfg, self.model
         parts: dict[str, torch.Tensor] = {}
         if "infonce" in c.losses:
@@ -100,12 +120,23 @@ class OnlineLearner:
             pairs = _preference_pairs(batch)
             if pairs is not None:
                 parts["dpo"] = obj.pairwise_dpo(m, *pairs, beta=c.dpo_beta)
+        if "distill" in c.losses and self.outcome_map is not None and len(self.outcome_map):
+            target, conf = self.outcome_map.soft_targets(batch["s"], batch["cands"], batch["mask"], tasks,
+                                                         beta=c.distill_beta)
+            parts["distill"] = obj.map_distill(m, batch["s"], batch["cands"], batch["mask"], target, conf)
         if self.replay is not None and c.replay_weight > 0:
             parts["replay"] = c.replay_weight * obj.replay_infonce(m, *self._replay_batch(c.replay_batch))
         if self.anchor is not None and c.kl_weight > 0:
             parts["kl"] = c.kl_weight * obj.anchor_kl(m, *self._anchor_batch(c.replay_batch))
         total = sum(parts.values()) if parts else torch.zeros((), device=c.device)
         return total, {k: float(v.detach()) for k, v in parts.items()}
+
+    def _view(self, items):
+        if self.cfg.ignore_outcome:
+            return [Labeled(i.d, True, i.weight) for i in items]
+        if not self.cfg.use_failures:
+            return [i for i in items if i.success]
+        return items
 
     def update(self, buffer: ExperienceBuffer, steps: int | None = None) -> dict:
         """A few optimiser steps on fresh experience mixed with older buffered steps."""
@@ -121,7 +152,9 @@ class OnlineLearner:
             items = self._view(items)
             if not items:
                 break
-            loss, logs = self.loss(to_tensors(items, self.cfg.device), buffer)
+            tasks = (torch.tensor([self.task_of(i.d) for i in items], device=self.cfg.device)
+                     if self.task_of else None)
+            loss, logs = self.loss(to_tensors(items, self.cfg.device), buffer, tasks)
             if not loss.requires_grad:
                 continue
             self.opt.zero_grad(set_to_none=True)
@@ -129,51 +162,66 @@ class OnlineLearner:
             torch.nn.utils.clip_grad_norm_(self.model.trainable_parameters(), self.cfg.grad_clip)
             self.opt.step()
         self.stats.updates += 1
+        self.model.eval()
+        if not self.cfg.gate:
+            self._promote(None)
         return logs
-
-    def _view(self, items):
-        if self.cfg.ignore_outcome:
-            return [Labeled(i.d, True, i.weight) for i in items]
-        if not self.cfg.use_failures:
-            return [i for i in items if i.success]
-        return items
 
     # ------------------------------------------------------------------ gating / publishing
     def maybe_publish(self, evaluate: Callable[[LoRAHeads], float]) -> bool:
-        """Score the candidate on held-out episodes; publish if it beats the last promoted adapter,
-        else roll the live weights back to it (so a bad update never compounds)."""
-        self.model.eval()
+        """Score candidate and served adapters on the same held-out data; promote if better."""
+        if not self.cfg.gate:
+            return False
         with torch.no_grad():
-            score = float(evaluate(self.model))
-        if self.best_score is None:
-            current = self.model.adapter_state()
-            self.model.load_adapter(self.best_adapter)
-            with torch.no_grad():
-                self.best_score = float(evaluate(self.model))
-            self.model.load_adapter(current)
-        ok = score > self.best_score + self.cfg.promote_margin
-        self.stats.history.append({"t": time.time(), "score": score, "incumbent": self.best_score, "promoted": ok})
+            cand, served = float(evaluate(self.model)), float(evaluate(self.serving))
+        ok = cand > served + self.cfg.promote_margin
+        self.stats.history.append({"t": time.time(), "candidate": cand, "served": served, "promoted": ok})
         if ok:
-            self.best_score, self.best_adapter = score, self.model.adapter_state()
-            self.publish()
-        else:
-            self.stats.rejected += 1
-            self.model.load_adapter(self.best_adapter)
-        return ok
+            self._promote(cand)
+            self._bad = 0
+            return True
+        self.stats.rejected += 1
+        self._bad = self._bad + 1 if cand < served - self.cfg.rollback_tolerance else 0
+        if self._bad >= self.cfg.rollback_patience:
+            self.model.load_adapter(self.serving.adapter_state())
+            self._new_optimizer()
+            self.stats.rollbacks += 1
+            self._bad = 0
+        return False
 
-    def publish(self) -> str | None:
+    def _promote(self, score):
+        self.serving.load_adapter(self.model.adapter_state())
+        self.publish(score)
+
+    def publish(self, score=None) -> str | None:
         self.version += 1
         self.stats.published += 1
         if not self.publish_path:
             return None
-        ck = self.model.merged_checkpoint({"version": self.version, "score": self.best_score})
+        ck = self.serving.merged_checkpoint({"version": self.version, "score": score})
         vdir = os.path.join(os.path.dirname(os.path.abspath(self.publish_path)), "versions")
         os.makedirs(vdir, exist_ok=True)
-        torch.save(self.model.adapter_state(), os.path.join(vdir, f"adapter_v{self.version:04d}.pt"))
+        torch.save(self.serving.adapter_state(), os.path.join(vdir, f"adapter_v{self.version:04d}.pt"))
         atomic_save(ck, self.publish_path)
         with open(os.path.join(vdir, "log.jsonl"), "a") as f:
-            f.write(json.dumps({"version": self.version, "score": self.best_score, "t": time.time()}) + "\n")
+            f.write(json.dumps({"version": self.version, "score": score, "t": time.time()}) + "\n")
         return self.publish_path
+
+
+@torch.no_grad()
+def snips(model: LoRAHeads, items: list[Labeled], bias: Callable | None = None, temperature: float = 1.0) -> float:
+    """Self-normalised importance-sampling estimate of the success rate ``model`` would get on the
+    logged decisions ``items`` (Swaminathan & Joachims 2015).  ``bias(batch) -> [B, K]`` adds the
+    same logit correction (e.g. the outcome map) the policy uses when acting."""
+    if not items:
+        return 0.0
+    b = to_tensors(items, next(model.parameters()).device)
+    logits = model.candidate_logits(b["s"], b["cands"])
+    if bias is not None:
+        logits = logits + bias(b)
+    pi = F.softmax((logits / temperature).masked_fill(~b["mask"], float("-inf")), -1)
+    w = pi.gather(1, b["chosen"].unsqueeze(1)).squeeze(1) / b["logged_prob"].clamp(min=1e-6)
+    return float((w * b["success"].float()).sum() / w.sum().clamp(min=1e-8))
 
 
 def _preference_pairs(batch):

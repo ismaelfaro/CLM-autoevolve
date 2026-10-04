@@ -16,6 +16,9 @@ All losses take encoder embeddings (the frozen Qwen3-8B side) and a ``LoRAHeads`
 * ``bandit_ppo``        Contextual-bandit policy gradient for typed Choice decisions: CLM's answer
                         is a softmax policy over the candidates, the logged probabilities are the
                         behaviour policy, and the clipped ratio keeps updates near it.
+* ``map_distill``       Cross-entropy towards the outcome map's success distribution over a
+                        decision's candidates (``OutcomeMap.soft_targets``): consolidates the
+                        fast non-parametric memory into the LoRA head.
 * ``anchor_kl``         KL(base || current) over candidate sets from a replay set: the
                         anti-forgetting term (with replay of the original training pairs).
 """
@@ -99,6 +102,14 @@ def bandit_ppo(model: LoRAHeads, s: torch.Tensor, cands: torch.Tensor, mask: tor
     ratio = torch.exp(lp - logged_prob.clamp(min=1e-6).log())
     adv = advantage.float()
     return -torch.min(ratio * adv, ratio.clamp(1 - clip, 1 + clip) * adv).mean()
+
+
+def map_distill(model: LoRAHeads, s: torch.Tensor, cands: torch.Tensor, mask: torch.Tensor,
+                target: torch.Tensor, weight: torch.Tensor) -> torch.Tensor:
+    """``target`` [B, K] from ``OutcomeMap.soft_targets``; ``weight`` [B] its confidence."""
+    logp = F.log_softmax(model.candidate_logits(s, cands).masked_fill(~mask, float("-inf")), -1)
+    per = -(target * logp.masked_fill(~mask, 0.0)).sum(-1)
+    return (per * weight).sum() / weight.sum().clamp(min=1e-8)
 
 
 def anchor_kl(model: LoRAHeads, s: torch.Tensor, cands: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
