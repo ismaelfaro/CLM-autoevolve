@@ -2,14 +2,15 @@
 """T-Rex testbed: does CLM get better at a task from its own successes and failures?
 
     python testbeds/trex/run_online.py                      # CPU: hash encoder + stand-in base head
-    python testbeds/trex/run_online.py --encoder clm --ckpt "$(clm-download)"   # real CLM-8B (GPU)
+    python testbeds/trex/run_online.py --encoder hf                              # real CLM-8B, Qwen3-8B via transformers (GPU)
+    python testbeds/trex/run_online.py --encoder clm --ckpt "$(clm-download)"   # real CLM-8B behind a vLLM server
 
 Protocol, per seed and per arm (every arm sees the same courses):
 
 1. **Base head.**  With ``--encoder hash`` a stand-in for "CLM before this task": heads trained
    on the planner's choices on an *easy* course (single cacti only: no groups, no birds).  It
-   knows to jump cacti, not how to time groups or what to do about birds.  With ``--encoder clm``
-   the released CLM head is the base, zero-shot.
+   knows to jump cacti, not how to time groups or what to do about birds.  With ``--encoder hf``
+   or ``clm`` the released CLM head is the base, zero-shot on the neutral prompt.
 2. **Online phase** (``--train-frames`` on one training course, many lives): the agent acts by
    sampling from its answer distribution; each obstacle encounter is an episode, cleared =
    success, crash = failure; the learner updates the LoRA every ``--update-every`` episodes and
@@ -79,7 +80,8 @@ class _PlannerAgent:
         pass
 
 
-def build_base(enc, seed, frames=40_000, steps=1500):
+def planner_states(seed, frames=40_000):
+    """(texts, planner labels) from planner-driven play (15% random actions) on the easy course."""
     rng = random.Random(seed)
     texts, labels = [], []
     for i in range(4):
@@ -87,6 +89,21 @@ def build_base(enc, seed, frames=40_000, steps=1500):
         agent = _PlannerAgent(env, 0.15, rng)
         env.play(agent, frames // 4)
         texts += [t for t, _ in agent.data]; labels += [y for _, y in agent.data]
+    return texts, labels
+
+
+def real_anchor(enc, seed, n=2000, device="cpu"):
+    """Anti-forgetting anchor for a real CLM head: varied game states (easy course, planner play)."""
+    texts, _ = planner_states(seed, frames=12_000)
+    texts = list(dict.fromkeys(texts))[:n]
+    S = torch.tensor(enc.embed(texts))
+    opts = torch.tensor(enc.embed([OPTIONS[a] for a in ACTIONS]))
+    C = opts.unsqueeze(0).expand(len(S), -1, -1).contiguous()
+    return S.to(device), C.to(device), torch.ones(len(S), 3, dtype=torch.bool, device=device)
+
+
+def build_base(enc, seed, frames=40_000, steps=1500):
+    texts, labels = planner_states(seed, frames)
     S = torch.tensor(enc.embed(texts))
     opts = torch.tensor(enc.embed([OPTIONS[a] for a in ACTIONS]))
     C = opts.unsqueeze(0).expand(len(S), -1, -1).contiguous()
@@ -124,7 +141,8 @@ class Agent:
         self.learn, self.greedy, self.eps, self.t, self.map_strength = learn, greedy, eps, temperature, map_strength
         self.update_every, self.gate_window = update_every, gate_window
         self.opts_np = enc.embed([OPTIONS[a] for a in ACTIONS]).astype(np.float32)
-        self.opts = torch.from_numpy(self.opts_np)[None]
+        self.device = next(head.parameters()).device
+        self.opts = torch.from_numpy(self.opts_np)[None].to(self.device)
         self.train = ExperienceBuffer(strategy="terminal", window=window, seed=seed)
         self.val = ExperienceBuffer(strategy="terminal", window=window, seed=seed + 1)
         self.rng = np.random.default_rng(seed)
@@ -142,12 +160,12 @@ class Agent:
     @torch.no_grad()
     def decide(self, text, label, ep):
         s = self.enc.embed([text])[0].astype(np.float32)
-        st = torch.from_numpy(s)[None]
+        st = torch.from_numpy(s)[None].to(self.device)
         tid = self.tasks.setdefault(label, len(self.tasks))
         lg = self.actor().candidate_logits(st, self.opts)[0]
         if self.omap is not None:
-            lg = lg + self.omap.bias(st, self.opts, torch.tensor([tid]), self.map_strength)[0]
-        p = F.softmax(lg / self.t, -1).numpy()
+            lg = lg + self.omap.bias(st, self.opts, torch.tensor([tid], device=self.device), self.map_strength)[0]
+        p = F.softmax(lg / self.t, -1).double().cpu().numpy()
         p = (1 - self.eps) * p + self.eps / len(p)
         a = int(p.argmax()) if self.greedy else int(self.rng.choice(len(p), p=p / p.sum()))
         if self.learn:
@@ -189,13 +207,14 @@ def summarize(t):
 def run_arm(name, enc, base_ck, anchor, args, seed):
     spec = dict(ARMS[name])
     learn, use_map = spec.pop("learn", True), spec.pop("map", False)
-    omap = OutcomeMap(dim=anchor[0].shape[1], k=args.map_k, tau_state=args.map_tau) if use_map else None
+    omap = (OutcomeMap(dim=anchor[0].shape[1], k=args.map_k, tau_state=args.map_tau, device=args.device)
+            if use_map else None)
     learner = None
     if learn and "losses" in spec:
         cfg = LearnerConfig(rank=args.rank, lr=args.lr, steps_per_update=args.steps, batch=args.batch,
-                            replay_batch=256, kl_weight=args.kl, **spec)
+                            replay_batch=256, kl_weight=args.kl, device=args.device, **spec)
         learner = OnlineLearner(base_ck, None, cfg, anchor=anchor, outcome_map=omap, task_of=lambda d: d.task)
-    head = LoRAHeads(base_ck, rank=1).eval()
+    head = LoRAHeads(base_ck, rank=1).eval().to(args.device)
     agent = Agent(enc, head, learner, omap, learn=learn, update_every=args.update_every, window=args.window,
                   map_strength=args.map_strength, seed=seed)
     torch.manual_seed(seed)
@@ -233,10 +252,14 @@ def run_arm(name, enc, base_ck, anchor, args, seed):
 # --------------------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--encoder", choices=["hash", "clm"], default="hash")
+    ap.add_argument("--encoder", choices=["hash", "hf", "clm"], default="hash",
+                    help="hash: CPU stand-in + stand-in base head; hf: Qwen3-8B in-process (transformers, GPU); "
+                         "clm: Qwen3-8B behind a vLLM pooling server (as clm-serve uses)")
     ap.add_argument("--dim", type=int, default=256, help="hash encoder width")
-    ap.add_argument("--ckpt", help="--encoder clm: base CLM checkpoint (e.g. $(clm-download))")
+    ap.add_argument("--ckpt", help="hf/clm: base CLM checkpoint (default: the released head, downloaded)")
+    ap.add_argument("--hf-model", default="Qwen/Qwen3-8B")
     ap.add_argument("--emb-url", default="http://127.0.0.1:8090/v1/embeddings")
+    ap.add_argument("--device", default=None, help="heads, learner and map (default: cuda if available)")
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     ap.add_argument("--arms", nargs="+", default=list(ARMS), choices=list(ARMS))
     ap.add_argument("--train-frames", type=int, default=60_000)
@@ -253,23 +276,36 @@ def main():
     ap.add_argument("--map-k", type=int, default=64)
     ap.add_argument("--map-tau", type=float, default=0.05)
     ap.add_argument("--map-strength", type=float, default=2.0)
-    ap.add_argument("--out", default=os.path.join(ROOT, "experiments", "results", "trex_online.json"))
+    ap.add_argument("--out", default=None, help="results JSON (default runs/trex_online_<encoder>.json)")
     args = ap.parse_args()
     torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
+    args.device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    args.out = args.out or os.path.join(ROOT, "runs", f"trex_online_{args.encoder}.json")
+    real = None
+    if args.encoder != "hash":
+        if args.encoder == "hf":
+            from autoevolve import TransformersEncoder
+            real = TransformersEncoder(args.hf_model, device=args.device)
+        else:
+            real = ClmEncoder(args.emb_url)
+        if not args.ckpt:
+            from clm.heads import download
+            args.ckpt = download()
+        real_ck = torch.load(args.ckpt, map_location="cpu", weights_only=False)
 
     rows, bases = [], {}
     for seed in args.seeds:
         t0 = time.time()
-        if args.encoder == "clm":
-            enc = ClmEncoder(args.emb_url)
-            base_ck = torch.load(args.ckpt, map_location="cpu", weights_only=False)
-            S = torch.tensor(enc.embed([f"Dino runner game. Nothing ahead. Speed {v}." for v in range(6, 14)]))
-            opts = torch.tensor(enc.embed([OPTIONS[a] for a in ACTIONS]))
-            anchor = (S, opts.unsqueeze(0).expand(len(S), -1, -1).contiguous(), torch.ones(len(S), 3, dtype=torch.bool))
-            bases[seed] = {"base": args.ckpt}
+        if real is not None:
+            enc, base_ck = real, real_ck
+            anchor = real_anchor(enc, seed, device=args.device)
+            bases[seed] = {"base": args.ckpt, "anchor_states": len(anchor[0])}
+            print(f"[base] seed {seed}: released head {args.ckpt}, {len(anchor[0])} anchor states "
+                  f"({time.time() - t0:.0f}s)", flush=True)
         else:
             enc = HashEncoder(args.dim)
             base_ck, anchor, info = build_base(enc, seed)
+            anchor = tuple(x.to(args.device) for x in anchor)
             bases[seed] = info
             print(f"[base] seed {seed}: {json.dumps(info)} ({time.time() - t0:.0f}s)", flush=True)
         for arm in args.arms:
