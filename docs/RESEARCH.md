@@ -274,7 +274,39 @@ pre-trained on a related but shifted rule; episodes have 3 steps and end at the 
 action; only the episode outcome is reported. LoRA r=8, an update every 25 episodes, gated
 (SNIPS), 40% replay, KL 0.05; identical episode streams per arm; 3 seeds.
 
-SYNTH_RESULTS
+| Arm | Online success (first → last third) | New-rule accuracy | Base-rule accuracy | Published / rejected |
+|---|---|---|---|---|
+| frozen | 0.119 → 0.115 ± 0.018 | 0.594 ± 0.021 | 0.823 ± 0.012 | – |
+| all-positive (reward ignored, gated) | 0.109 → 0.097 ± 0.021 | 0.550 ± 0.044 | 0.759 ± 0.081 | 1 / 59 |
+| **all-positive, ungated** | 0.049 → **0.029 ± 0.005** | **0.351 ± 0.006** | 0.435 ± 0.013 | 60 / 0 |
+| success-only | 0.108 → 0.097 ± 0.015 | 0.569 ± 0.051 | 0.628 ± 0.056 | 7 / 53 |
+| infonce (failures as hard negatives) | 0.121 → 0.115 ± 0.037 | 0.600 ± 0.029 | 0.668 ± 0.036 | 5 / 55 |
+| **ce** (CE + unlikelihood, terminal credit) | 0.136 → **0.157 ± 0.012** | **0.643 ± 0.028** | 0.720 ± 0.003 | 9 / 51 |
+| ce, credit `all` | 0.095 → 0.091 ± 0.018 | 0.571 ± 0.004 | 0.684 ± 0.012 | 9 / 51 |
+| bandit (clipped IPS) | 0.117 → 0.123 ± 0.011 | 0.624 ± 0.015 | 0.801 ± 0.011 | 10 / 50 |
+| infonce + ce | 0.114 → 0.138 ± 0.008 | 0.642 ± 0.024 | 0.650 ± 0.027 | 6 / 54 |
+
+(mean ± std over 3 seeds; online success = all 3 steps right; accuracy = greedy, on unseen states.)
+
+What it shows:
+
+* **Ignoring outcomes is the one thing that clearly breaks.** Learning from every executed step
+  as if it were right collapses the policy (accuracy 0.594 → 0.351, online success 0.115 →
+  0.029) when nothing stops it. The gate rejects it 59 times out of 60.
+* **Failures need a direct signal.** Success-only training is *below* frozen. `outcome_infonce`
+  alone barely moves, because a failure only acts as a hard negative when a success at the same
+  state is in the batch, which is rare here. `outcome_ce` (unlikelihood on the failed action)
+  is the best single objective (+37% relative online success, +5 accuracy points).
+* **Credit assignment matters as much as the loss.** The same `ce` with every step of a failed
+  episode labelled as failure is *below frozen* (0.571 vs 0.643 with terminal credit).
+* **Forgetting is real.** The new and base rules partly conflict, so gains on one cost the other.
+  `ce` drops base-rule accuracy 0.82 → 0.72. The bandit objective, which stays near the logged
+  policy by construction, keeps 0.80 with a smaller gain: the expected stability/plasticity
+  trade-off, for the KL/replay weights to tune.
+* The gate is conservative here (≈ 15% of updates promoted) because the held-out estimate is
+  noisy at this volume.
+
+This validates mechanics on a toy, not CLM-8B numbers.
 
 ---
 

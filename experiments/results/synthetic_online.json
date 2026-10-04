@@ -1,0 +1,302 @@
+{
+ "args": {
+  "episodes": 1500,
+  "update_every": 25,
+  "steps": 8,
+  "batch": 256,
+  "rank": 8,
+  "lr": 0.002,
+  "kl": 0.05,
+  "replay": 0.4,
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "arms": [
+   "frozen",
+   "all-positive",
+   "all-positive-ungated",
+   "success-only",
+   "infonce",
+   "ce",
+   "ce-credit-all",
+   "bandit",
+   "infonce+ce"
+  ],
+  "explore": true,
+  "out": "experiments/results/synthetic_online.json"
+ },
+ "rows": [
+  {
+   "arm": "frozen",
+   "seed": 0,
+   "online_success_last_third": 0.13,
+   "online_success_first_third": 0.114,
+   "new_rule_acc": 0.621,
+   "base_rule_acc": 0.836,
+   "published": 0,
+   "rejected": 0
+  },
+  {
+   "arm": "all-positive",
+   "seed": 0,
+   "online_success_last_third": 0.076,
+   "online_success_first_third": 0.086,
+   "new_rule_acc": 0.489,
+   "base_rule_acc": 0.644,
+   "published": 3,
+   "rejected": 57
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 0,
+   "online_success_last_third": 0.03,
+   "online_success_first_third": 0.046,
+   "new_rule_acc": 0.358,
+   "base_rule_acc": 0.433,
+   "published": 60,
+   "rejected": 0
+  },
+  {
+   "arm": "success-only",
+   "seed": 0,
+   "online_success_last_third": 0.118,
+   "online_success_first_third": 0.132,
+   "new_rule_acc": 0.63,
+   "base_rule_acc": 0.683,
+   "published": 6,
+   "rejected": 54
+  },
+  {
+   "arm": "infonce",
+   "seed": 0,
+   "online_success_last_third": 0.076,
+   "online_success_first_third": 0.116,
+   "new_rule_acc": 0.577,
+   "base_rule_acc": 0.617,
+   "published": 8,
+   "rejected": 52
+  },
+  {
+   "arm": "ce",
+   "seed": 0,
+   "online_success_last_third": 0.156,
+   "online_success_first_third": 0.146,
+   "new_rule_acc": 0.682,
+   "base_rule_acc": 0.72,
+   "published": 12,
+   "rejected": 48
+  },
+  {
+   "arm": "ce-credit-all",
+   "seed": 0,
+   "online_success_last_third": 0.096,
+   "online_success_first_third": 0.102,
+   "new_rule_acc": 0.574,
+   "base_rule_acc": 0.7,
+   "published": 16,
+   "rejected": 44
+  },
+  {
+   "arm": "bandit",
+   "seed": 0,
+   "online_success_last_third": 0.118,
+   "online_success_first_third": 0.114,
+   "new_rule_acc": 0.637,
+   "base_rule_acc": 0.817,
+   "published": 12,
+   "rejected": 48
+  },
+  {
+   "arm": "infonce+ce",
+   "seed": 0,
+   "online_success_last_third": 0.138,
+   "online_success_first_third": 0.098,
+   "new_rule_acc": 0.664,
+   "base_rule_acc": 0.687,
+   "published": 5,
+   "rejected": 55
+  },
+  {
+   "arm": "frozen",
+   "seed": 1,
+   "online_success_last_third": 0.126,
+   "online_success_first_third": 0.138,
+   "new_rule_acc": 0.59,
+   "base_rule_acc": 0.807,
+   "published": 0,
+   "rejected": 0
+  },
+  {
+   "arm": "all-positive",
+   "seed": 1,
+   "online_success_last_third": 0.126,
+   "online_success_first_third": 0.138,
+   "new_rule_acc": 0.59,
+   "base_rule_acc": 0.807,
+   "published": 0,
+   "rejected": 60
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 1,
+   "online_success_last_third": 0.034,
+   "online_success_first_third": 0.06,
+   "new_rule_acc": 0.343,
+   "base_rule_acc": 0.421,
+   "published": 60,
+   "rejected": 0
+  },
+  {
+   "arm": "success-only",
+   "seed": 1,
+   "online_success_last_third": 0.086,
+   "online_success_first_third": 0.1,
+   "new_rule_acc": 0.505,
+   "base_rule_acc": 0.551,
+   "published": 10,
+   "rejected": 50
+  },
+  {
+   "arm": "infonce",
+   "seed": 1,
+   "online_success_last_third": 0.164,
+   "online_success_first_third": 0.14,
+   "new_rule_acc": 0.641,
+   "base_rule_acc": 0.691,
+   "published": 3,
+   "rejected": 57
+  },
+  {
+   "arm": "ce",
+   "seed": 1,
+   "online_success_last_third": 0.172,
+   "online_success_first_third": 0.148,
+   "new_rule_acc": 0.62,
+   "base_rule_acc": 0.716,
+   "published": 9,
+   "rejected": 51
+  },
+  {
+   "arm": "ce-credit-all",
+   "seed": 1,
+   "online_success_last_third": 0.11,
+   "online_success_first_third": 0.1,
+   "new_rule_acc": 0.573,
+   "base_rule_acc": 0.681,
+   "published": 6,
+   "rejected": 54
+  },
+  {
+   "arm": "bandit",
+   "seed": 1,
+   "online_success_last_third": 0.138,
+   "online_success_first_third": 0.134,
+   "new_rule_acc": 0.632,
+   "base_rule_acc": 0.79,
+   "published": 14,
+   "rejected": 46
+  },
+  {
+   "arm": "infonce+ce",
+   "seed": 1,
+   "online_success_last_third": 0.148,
+   "online_success_first_third": 0.148,
+   "new_rule_acc": 0.654,
+   "base_rule_acc": 0.624,
+   "published": 7,
+   "rejected": 53
+  },
+  {
+   "arm": "frozen",
+   "seed": 2,
+   "online_success_last_third": 0.09,
+   "online_success_first_third": 0.104,
+   "new_rule_acc": 0.57,
+   "base_rule_acc": 0.825,
+   "published": 0,
+   "rejected": 0
+  },
+  {
+   "arm": "all-positive",
+   "seed": 2,
+   "online_success_last_third": 0.09,
+   "online_success_first_third": 0.104,
+   "new_rule_acc": 0.57,
+   "base_rule_acc": 0.825,
+   "published": 0,
+   "rejected": 60
+  },
+  {
+   "arm": "all-positive-ungated",
+   "seed": 2,
+   "online_success_last_third": 0.022,
+   "online_success_first_third": 0.042,
+   "new_rule_acc": 0.352,
+   "base_rule_acc": 0.452,
+   "published": 60,
+   "rejected": 0
+  },
+  {
+   "arm": "success-only",
+   "seed": 2,
+   "online_success_last_third": 0.088,
+   "online_success_first_third": 0.092,
+   "new_rule_acc": 0.571,
+   "base_rule_acc": 0.649,
+   "published": 5,
+   "rejected": 55
+  },
+  {
+   "arm": "infonce",
+   "seed": 2,
+   "online_success_last_third": 0.104,
+   "online_success_first_third": 0.108,
+   "new_rule_acc": 0.583,
+   "base_rule_acc": 0.696,
+   "published": 3,
+   "rejected": 57
+  },
+  {
+   "arm": "ce",
+   "seed": 2,
+   "online_success_last_third": 0.142,
+   "online_success_first_third": 0.114,
+   "new_rule_acc": 0.628,
+   "base_rule_acc": 0.724,
+   "published": 6,
+   "rejected": 54
+  },
+  {
+   "arm": "ce-credit-all",
+   "seed": 2,
+   "online_success_last_third": 0.066,
+   "online_success_first_third": 0.082,
+   "new_rule_acc": 0.565,
+   "base_rule_acc": 0.672,
+   "published": 6,
+   "rejected": 54
+  },
+  {
+   "arm": "bandit",
+   "seed": 2,
+   "online_success_last_third": 0.112,
+   "online_success_first_third": 0.104,
+   "new_rule_acc": 0.603,
+   "base_rule_acc": 0.797,
+   "published": 5,
+   "rejected": 55
+  },
+  {
+   "arm": "infonce+ce",
+   "seed": 2,
+   "online_success_last_third": 0.128,
+   "online_success_first_third": 0.096,
+   "new_rule_acc": 0.609,
+   "base_rule_acc": 0.638,
+   "published": 6,
+   "rejected": 54
+  }
+ ]
+}
