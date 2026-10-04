@@ -38,7 +38,7 @@ class Decision:
     group: int                        # decision-point id: same state + same question
     head_version: int = 0
     step_reward: float | None = None  # dense per-step signal, if the environment has one
-    task: str | None = None
+    task: int | None = None           # task id (outcome map: same-task bonus)
 
 
 @dataclass
@@ -117,6 +117,10 @@ class ExperienceBuffer:
                     self.items[j] = item
         return labeled
 
+    def discard(self, episode: str) -> None:
+        """Drop an open episode that will never get an outcome."""
+        self.open.pop(episode, None)
+
     def baseline(self, group: int) -> float:
         if self._cnt[group] >= 2:
             return self._sum[group] / self._cnt[group]
@@ -152,4 +156,5 @@ def to_tensors(items: list[Labeled], device="cpu") -> dict[str, torch.Tensor]:
         "success": t([i.success for i in items], dtype=torch.bool),
         "weight": t([i.weight for i in items], dtype=torch.float32),
         "group": t([i.d.group for i in items], dtype=torch.long),
+        "task": t([i.d.task if i.d.task is not None else -1 for i in items], dtype=torch.long),
     }

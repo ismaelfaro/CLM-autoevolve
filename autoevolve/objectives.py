@@ -49,6 +49,9 @@ def outcome_infonce(model: LoRAHeads, s: torch.Tensor, a: torch.Tensor, success:
     same = group.unsqueeze(0) == group.unsqueeze(1)
     eye = torch.eye(len(s), dtype=torch.bool, device=s.device)
     false_neg = same & pos.unsqueeze(0) & pos.unsqueeze(1) & ~eye     # other right answers
+    # the same action text in another row is not a negative (closed action sets repeat a lot)
+    an = F.normalize(a.float(), dim=-1)
+    false_neg |= (an @ an.t() > 0.9999) & ~eye & pos.unsqueeze(0)
     hard = same & ~pos.unsqueeze(0)                                   # failed actions, same state
     if hard_negative_boost > 0:
         logits = logits + hard.float() * torch.log1p(torch.tensor(hard_negative_boost, device=s.device))

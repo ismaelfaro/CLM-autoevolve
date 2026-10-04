@@ -11,6 +11,7 @@ gate decides, on held-out logged episodes, whether to publish.
 Arms
   frozen        the base head, never updated
   all-positive  every executed step is a positive (reward ignored, as train/finetune.py does)
+  all-positive-ungated  the same without the gate (what ignoring outcomes does when nothing stops it)
   success-only  successful steps are positives, failures dropped
   infonce       successes positive + failed actions as same-state hard negatives (terminal credit)
   ce            candidate-set CE on successes + unlikelihood on failures (terminal credit)
@@ -36,9 +37,8 @@ import torch
 import torch.nn.functional as F
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from autoevolve import Decision, ExperienceBuffer, LearnerConfig, LoRAHeads, OnlineLearner  # noqa: E402
+from autoevolve import Decision, ExperienceBuffer, LearnerConfig, LoRAHeads, OnlineLearner, snips  # noqa: E402
 from autoevolve import objectives as obj  # noqa: E402
-from autoevolve.experience import to_tensors  # noqa: E402
 from autoevolve.lora import random_checkpoint  # noqa: E402
 
 D = 32
@@ -123,6 +123,7 @@ def anchor_set(world, seed, n=2000):
 ARMS = {
     "frozen": None,
     "all-positive": dict(losses=("infonce",), ignore_outcome=True),
+    "all-positive-ungated": dict(losses=("infonce",), ignore_outcome=True, gate=False),
     "success-only": dict(losses=("infonce",), use_failures=False),
     "infonce": dict(losses=("infonce",)),
     "ce": dict(losses=("ce",)),
@@ -145,14 +146,8 @@ def run_arm(name, world, base_ck, replay, anchor, args, seed):
     outcomes = []
 
     def gate_score(model):
-        """Outcome agreement on held-out logged steps: the head should rank a logged success first
-        and a logged failure not first.  Uses only what the system observed, never W*."""
-        items = val_buf.items[-2000:]
-        if not items:
-            return 0.0
-        b = to_tensors(items)
-        top = model.candidate_logits(b["s"], b["cands"]).argmax(-1) == b["chosen"]
-        return float((top == b["success"]).float().mean())
+        """SNIPS success estimate on held-out logged steps: only what the system observed, never W*."""
+        return snips(model, val_buf.items[-2000:])
 
     for ep in range(args.episodes):
         eid = f"{ep}"
@@ -160,7 +155,7 @@ def run_arm(name, world, base_ck, replay, anchor, args, seed):
         buf = val_buf if ep % 5 == 4 else train_buf
         for t in range(world.length):
             s, cands = world.draw()
-            p = probs(learner.model, s, cands)
+            p = probs(learner.serving, s, cands)
             choice = int(r.choice(len(p), p=p / p.sum())) if args.explore else int(p.argmax())
             g = group_of.setdefault(s.tobytes(), len(group_of))      # decision point = state
             buf.record(Decision(eid, t, s, cands, choice, p, g))
@@ -175,8 +170,8 @@ def run_arm(name, world, base_ck, replay, anchor, args, seed):
     tail = outcomes[-len(outcomes) // 3:]
     return {"arm": name, "seed": seed, "online_success_last_third": float(np.mean(tail)),
             "online_success_first_third": float(np.mean(outcomes[:len(outcomes) // 3])),
-            "new_rule_acc": greedy_acc(learner.model, world, world.w_new),
-            "base_rule_acc": greedy_acc(learner.model, world, world.w_base),
+            "new_rule_acc": greedy_acc(learner.serving, world, world.w_new),
+            "base_rule_acc": greedy_acc(learner.serving, world, world.w_base),
             "published": learner.stats.published, "rejected": learner.stats.rejected}
 
 
