@@ -3,7 +3,7 @@ import json
 import sys
 
 REPO = "ismaelfaro/CLM-autoevolve"
-BRANCH = "claude/clm-online-lora-research"
+BRANCH = "main"
 cells = []
 
 

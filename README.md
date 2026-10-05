@@ -52,7 +52,7 @@ worse than not learning at all.
 
 ## Run on Google Colab
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ismaelfaro/CLM-autoevolve/blob/claude/clm-online-lora-research/notebooks/CLM_autoevolve_colab.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ismaelfaro/CLM-autoevolve/blob/main/notebooks/CLM_autoevolve_colab.ipynb)
 
 [`notebooks/CLM_autoevolve_colab.ipynb`](notebooks/CLM_autoevolve_colab.ipynb) runs everything end to end:
 
