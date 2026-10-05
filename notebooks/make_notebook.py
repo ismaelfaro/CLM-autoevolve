@@ -183,6 +183,10 @@ The real encoder (Qwen3-8B, run in-process with `transformers`: last-token pooli
 and the **released CLM head** (`CLM_v0.1-8B.pt`, downloaded from Hugging Face) as the base, zero-shot on the
 neutral prompt. First run downloads ~16 GB of weights. Embeddings are cached per text, so later arms are faster.
 
+The released head scores with a large logit scale, so over 3 actions its answer is nearly one-hot. Acting
+uses `--act-temperature auto` (logits divided back to the 1/0.07 scale; printed in the `[base]` line), so the
+agent explores, the gate gets usable propensities, and outcome-map evidence can change a choice.
+
 `--encoder clm --emb-url ...` does the same against a vLLM pooling server, as in CLM's README, if you prefer it.
 """)
 code("""
@@ -215,24 +219,49 @@ Every head is scored by CLM's **own, unmodified** `evaluation/bon_eval.py` on th
 Only the projection heads train (embeddings are precomputed), so the GPU is for speed, not memory.
 """)
 code("""
-from huggingface_hub import snapshot_download
+from huggingface_hub import HfApi, snapshot_download
 from clm.heads import download
 HEADS = snapshot_download("Contrastive-LM/deepswe-clm-heads-8k", local_dir="heads/deepswe")
 INIT = download()                      # CLM_v0.1-8B.pt, the warm start (and the zero-shot reference)
 print(sorted(os.listdir(HEADS)), "\\nwarm start:", INIT)
+print("Contrastive-LM datasets on the Hub:", sorted(d.id for d in HfApi().list_datasets(author="Contrastive-LM")))
 os.makedirs("runs/phase0", exist_ok=True)
-BON = "python /content/CLM/evaluation/bon_eval.py --hf-dataset Contrastive-LM/deepswe-clm-embeddings-8k " \\
-      "--tasks-file heads/deepswe/heldout_tasks.json --n 4 --window 12"
-""")
-md("References: the published DeepSWE head (expected 31/38) and the zero-shot base head.")
-code("""
-!{BON} --checkpoint heads/deepswe/best_head.pt --output runs/phase0/bon_published.json
-!{BON} --checkpoint {INIT} --output runs/phase0/bon_zero-shot.json
 """)
 md("The training embeddings (size printed after download; they stay on disk under `data/`).")
 code("""
 !python /content/CLM/preprocessing/hf_embeddings.py download Contrastive-LM/deepswe-clm-train-embeddings-8k --out data/deepswe_train
 !du -sh data/deepswe_train
+""")
+md("""
+**Where to evaluate.** CLM's README scores heldout-38 on `Contrastive-LM/deepswe-clm-embeddings-8k`. If that
+dataset is not on the Hub (it returned 404 on 2026-10-05), the held-out tasks are taken from the training
+pool instead, *only* if all 38 are there. Training never sees them (`--holdout-tasks`). Every head, the
+published one included, is then scored on that same data, so the comparison stays like for like, but the
+published 31/38 itself was measured on the other dataset.
+""")
+code("""
+from huggingface_hub import HfApi
+held = json.load(open("heads/deepswe/heldout_tasks.json"))
+held = set(held if isinstance(held, list) else held.get("tasks", held.get("heldout_tasks")))
+try:
+    HfApi().dataset_info("Contrastive-LM/deepswe-clm-embeddings-8k")
+    EVAL = "--hf-dataset Contrastive-LM/deepswe-clm-embeddings-8k"
+    print("evaluating on the published evaluation dataset")
+except Exception as e:
+    trajs = {}
+    for s_ in json.load(open("data/deepswe_train/metadata.json"))["samples"]:
+        if s_["task_id"] in held:
+            trajs.setdefault(s_["task_id"], set()).add(s_["trajectory_id"])
+    print(f"evaluation dataset unavailable ({type(e).__name__}); held-out tasks in the training pool: "
+          f"{len(trajs)}/{len(held)}; trajectories per task: {sorted(len(v) for v in trajs.values())}")
+    assert len(trajs) == len(held), "the training pool lacks some held-out tasks: heldout-38 cannot be reproduced"
+    EVAL = "--embeddings-dir data/deepswe_train"
+BON = f"python /content/CLM/evaluation/bon_eval.py {EVAL} --tasks-file heads/deepswe/heldout_tasks.json --n 4 --window 12"
+""")
+md("References: the published DeepSWE head and the zero-shot base head, on the same evaluation data.")
+code("""
+!{BON} --checkpoint heads/deepswe/best_head.pt --output runs/phase0/bon_published.json
+!{BON} --checkpoint {INIT} --output runs/phase0/bon_zero-shot.json
 """)
 md("""
 Train and score each objective. `STEPS` bounds an epoch so a run fits a Colab session; raise it (or drop

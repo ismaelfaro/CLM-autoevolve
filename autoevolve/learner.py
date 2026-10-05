@@ -211,15 +211,16 @@ class OnlineLearner:
 @torch.no_grad()
 def snips(model: LoRAHeads, items: list[Labeled], bias: Callable | None = None, temperature: float = 1.0) -> float:
     """Self-normalised importance-sampling estimate of the success rate ``model`` would get on the
-    logged decisions ``items`` (Swaminathan & Joachims 2015).  ``bias(batch) -> [B, K]`` adds the
-    same logit correction (e.g. the outcome map) the policy uses when acting."""
+    logged decisions ``items`` (Swaminathan & Joachims 2015).  The policy is
+    ``softmax(head_logits / temperature + bias)``: ``bias(batch) -> [B, K]`` is the same logit
+    correction (e.g. the outcome map) the policy adds when acting."""
     if not items:
         return 0.0
     b = to_tensors(items, next(model.parameters()).device)
-    logits = model.candidate_logits(b["s"], b["cands"])
+    logits = model.candidate_logits(b["s"], b["cands"]) / temperature
     if bias is not None:
-        logits = logits + bias(b)
-    pi = F.softmax((logits / temperature).masked_fill(~b["mask"], float("-inf")), -1)
+        logits = logits + bias(b)          # after the temperature, exactly as the policy acts
+    pi = F.softmax(logits.masked_fill(~b["mask"], float("-inf")), -1)
     w = pi.gather(1, b["chosen"].unsqueeze(1)).squeeze(1) / b["logged_prob"].clamp(min=1e-6)
     return float((w * b["success"].float()).sum() / w.sum().clamp(min=1e-8))
 

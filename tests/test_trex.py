@@ -68,3 +68,19 @@ def test_agent_learns_into_the_outcome_map():
     env.play(agent, 4000)
     assert len(omap) > 0 and len(agent.val.items) > 0
     assert set(np.unique([i.d.chosen for i in agent.train.items])) <= set(range(len(ACTIONS)))
+
+
+def test_acting_temperature_tames_a_large_logit_scale():
+    import math
+    import torch
+    from testbeds.trex.run_online import act_temperature
+    ck = random_checkpoint(width=64, proj=16, hidden=64)
+    assert act_temperature(LoRAHeads(ck, rank=1), "auto") == 1.0        # stand-in heads: unchanged
+    ck["logit_scale"] = torch.tensor(math.log(100.0))                    # a confident head, like CLM's
+    head = LoRAHeads(ck, rank=1).eval()
+    t = act_temperature(head, "auto")
+    assert t == 7.0 and act_temperature(head, "2.5") == 2.5
+    s, c = torch.randn(64, 64), torch.randn(64, 3, 64)
+    raw = torch.softmax(head.candidate_logits(s, c), -1).max(-1).values.mean()
+    tamed = torch.softmax(head.candidate_logits(s, c) / t, -1).max(-1).values.mean()
+    assert tamed < raw                                                   # less one-hot: room to explore

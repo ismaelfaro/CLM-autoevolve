@@ -1,0 +1,158 @@
+{
+ "source": "notebooks/CLM_autoevolve_colab.ipynb on Colab L4, 2026-10-05, pasted run output",
+ "part_a_trex_hash_1seed": {
+  "frozen": {
+   "eval_deaths_per_min": 7.0,
+   "eval_clear_rate": 0.7705,
+   "oracle_agreement": 0.934,
+   "train_clear": [
+    0.6622,
+    0.7849,
+    0.7586
+   ]
+  },
+  "map": {
+   "eval_deaths_per_min": 5.0,
+   "eval_clear_rate": 0.8571,
+   "oracle_agreement": 0.9287,
+   "train_clear": [
+    0.7614,
+    0.8585,
+    0.9194
+   ]
+  },
+  "lora": {
+   "eval_deaths_per_min": 0.5,
+   "eval_clear_rate": 0.9895,
+   "oracle_agreement": 0.8053,
+   "train_clear": [
+    0.7381,
+    0.7241,
+    0.6575
+   ],
+   "learner": {
+    "updates": 19,
+    "published": 7,
+    "rejected": 12,
+    "rollbacks": 0
+   }
+  },
+  "lora+map": {
+   "eval_deaths_per_min": 1.5,
+   "eval_clear_rate": 0.9655,
+   "oracle_agreement": 0.8439,
+   "train_clear": [
+    0.7614,
+    0.9153,
+    0.916
+   ],
+   "learner": {
+    "updates": 25,
+    "published": 5,
+    "rejected": 20,
+    "rollbacks": 0
+   }
+  },
+  "all-positive-ungated": {
+   "eval_deaths_per_min": 8.0,
+   "eval_clear_rate": 0.7333,
+   "oracle_agreement": 0.835,
+   "train_clear": [
+    0.6286,
+    0.5469,
+    0.4407
+   ],
+   "learner": {
+    "updates": 15,
+    "published": 15,
+    "rejected": 0,
+    "rollbacks": 0
+   }
+  }
+ },
+ "part_b_synthetic_1seed": {
+  "frozen": {
+   "online_last_third": 0.1033,
+   "new_rule_acc": 0.621,
+   "base_rule_acc": 0.836
+  },
+  "all-positive-ungated": {
+   "online_last_third": 0.01,
+   "new_rule_acc": 0.338,
+   "base_rule_acc": 0.428
+  },
+  "success-only": {
+   "online_last_third": 0.0967,
+   "new_rule_acc": 0.555,
+   "base_rule_acc": 0.596
+  },
+  "ce": {
+   "online_last_third": 0.12,
+   "new_rule_acc": 0.662,
+   "base_rule_acc": 0.748
+  },
+  "ce-credit-all": {
+   "online_last_third": 0.0833,
+   "new_rule_acc": 0.596,
+   "base_rule_acc": 0.693
+  }
+ },
+ "part_c_trex_real_clm8b_1seed_before_temperature_fix": {
+  "frozen": {
+   "eval_deaths_per_min": 12.5,
+   "eval_clear_rate": 0.1379,
+   "oracle_agreement": 0.0066,
+   "train_clear": [
+    0.0976,
+    0.0714,
+    0.0732
+   ]
+  },
+  "map": {
+   "eval_deaths_per_min": 12.5,
+   "eval_clear_rate": 0.1379,
+   "oracle_agreement": 0.0066,
+   "train_clear": [
+    0.05,
+    0.0732,
+    0.0952
+   ]
+  },
+  "lora": {
+   "eval_deaths_per_min": 13.0,
+   "eval_clear_rate": 0.1333,
+   "oracle_agreement": 0.3763,
+   "train_clear": [
+    0.1395,
+    0.2391,
+    0.3519
+   ],
+   "learner": {
+    "updates": 11,
+    "published": 2,
+    "rejected": 9,
+    "rollbacks": 1
+   }
+  },
+  "lora+map": {
+   "eval_deaths_per_min": 12.5,
+   "eval_clear_rate": 0.1379,
+   "oracle_agreement": 0.0066,
+   "train_clear": [
+    0.05,
+    0.05,
+    0.1163
+   ],
+   "learner": {
+    "updates": 9,
+    "published": 0,
+    "rejected": 9,
+    "rollbacks": 0
+   }
+  }
+ },
+ "part_d": {
+  "error": "RepositoryNotFoundError 404 for dataset Contrastive-LM/deepswe-clm-embeddings-8k",
+  "train_embeddings": "Contrastive-LM/deepswe-clm-train-embeddings-8k downloaded (~3.9 GB)"
+ }
+}

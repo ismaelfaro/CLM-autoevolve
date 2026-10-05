@@ -339,6 +339,55 @@ so exact state revisits across courses are common. That flatters the non-paramet
 than open-ended states would. The base head is a stand-in for CLM, not CLM. Training-phase rates
 include exploration (sampling, ε = 0.05). Raw data: `experiments/results/trex_online.json`.
 
+### 8.1 First runs on Google Colab (L4, 2026-10-05)
+
+From `notebooks/CLM_autoevolve_colab.ipynb`, 1 seed, 30k training frames, 2 unseen evaluation courses.
+
+**Part A (CPU stand-in) reproduces the result:**
+
+| Arm | Eval deaths / min | Eval clear rate |
+|---|---|---|
+| frozen | 7.0 | 77.0% |
+| map only | 5.0 | 85.7% |
+| LoRA (gated) | 0.5 | 99.0% |
+| LoRA + map | 1.5 | 96.5% |
+| all-positive, ungated | 8.0 | 73.3% |
+
+The synthetic toy (Part B) also matches §9 (`ce` 0.621 → 0.662 accuracy; ignoring outcomes 0.338).
+
+**Part C, the real CLM-8B (Qwen3-8B in-process + `CLM_v0.1-8B.pt`), did not improve. The cause was
+diagnosed and fixed; it needs a re-run:**
+
+| Arm | Eval deaths / min | Eval clear rate | Planner agreement | Updates promoted / rejected |
+|---|---|---|---|---|
+| frozen (zero-shot) | 12.5 | 13.8% | 0.7% | – |
+| map only | 12.5 | 13.8% | 0.7% | – |
+| LoRA (gated) | 13.0 | 13.3% | 37.6% | 2 / 9 |
+| LoRA + map | 12.5 | 13.8% | 0.7% | 0 / 9 |
+
+* **Zero-shot, on the neutral prompt, the released head almost never jumps**: it clears birds (by
+  ducking or running) and fails every cactus. With the example's `labeled` prompt the answer is
+  written into the options. Without it, this is a genuinely new task for CLM.
+* **The map changed nothing, to the decimal**, because the released head scores with a large logit
+  scale: over 3 actions its softmax is ~one-hot, and the map's correction (|bias| ≤ 2·ln 999 ≈ 14)
+  could not overturn it. The agent also barely explored (sampling a one-hot distribution), and the
+  logged propensities of ~0/1 made the gate's importance weights degenerate (2 of 11 updates
+  promoted). On top of that, the prototype added the map bias *before* dividing by the temperature,
+  which shrank it further.
+* The LoRA did learn during training (train clear rate 14% → 35%, planner agreement 0.7% → 37.6%),
+  but the gate promoted too little of it.
+* **Fix** (`run_online.py --act-temperature auto`, the default): act with the head's logits divided
+  back to the 1/0.07 scale (`T = scale / 14.3`; the stand-in heads have exactly that scale, so Part A
+  is unchanged) and add the map's evidence *after* the temperature, in the policy and in the gate's
+  SNIPS estimate alike. This is a general lesson: **an online learner on top of CLM has to
+  calibrate CLM's temperature for the action set**. CLM's API exposes `temperature` for this.
+
+**Part D:** the evaluation dataset named in CLM's README (`Contrastive-LM/deepswe-clm-embeddings-8k`)
+returned 404 on the Hub; the training embeddings (`deepswe-clm-train-embeddings-8k`, ~3.9 GB) downloaded
+fine. The notebook now falls back to the held-out tasks inside the training pool when all 38 are present,
+and scores the published head on that same data for a like-for-like comparison.
+Raw data: `experiments/results/colab_2026-10-05.json`.
+
 ---
 
 ## 9. Synthetic check

@@ -162,10 +162,10 @@ class Agent:
         s = self.enc.embed([text])[0].astype(np.float32)
         st = torch.from_numpy(s)[None].to(self.device)
         tid = self.tasks.setdefault(label, len(self.tasks))
-        lg = self.actor().candidate_logits(st, self.opts)[0]
-        if self.omap is not None:
+        lg = self.actor().candidate_logits(st, self.opts)[0] / self.t
+        if self.omap is not None:   # evidence is added after the temperature, so it is never scaled away
             lg = lg + self.omap.bias(st, self.opts, torch.tensor([tid], device=self.device), self.map_strength)[0]
-        p = F.softmax(lg / self.t, -1).double().cpu().numpy()
+        p = F.softmax(lg, -1).double().cpu().numpy()
         p = (1 - self.eps) * p + self.eps / len(p)
         a = int(p.argmax()) if self.greedy else int(self.rng.choice(len(p), p=p / p.sum()))
         if self.learn:
@@ -195,6 +195,21 @@ class Agent:
 
 
 # --------------------------------------------------------------------------- one arm
+BASE_SCALE = 1 / 0.07       # CLIP's initial logit scale: the stand-in heads' scale
+
+
+def act_temperature(head, spec):
+    """Acting temperature.  ``auto`` divides the head's logits back to a scale of 1/0.07, so the
+    answer distribution over a handful of actions is not one-hot: a head with a large logit scale
+    (CLM's released head) otherwise never explores, its logged propensities are ~0/1 (useless for
+    the gate's importance weights), and outcome-map evidence cannot move its choices.  The
+    stand-in heads have exactly that scale, so ``auto`` leaves them unchanged (T = 1)."""
+    if spec == "auto":
+        return round(max(1.0, float(head.scale) / BASE_SCALE), 3)
+    return float(spec)
+
+
+
 def summarize(t):
     enc = t.cleared + t.deaths
     return {"frames": t.frames, "deaths": t.deaths, "cleared": t.cleared,
@@ -215,8 +230,9 @@ def run_arm(name, enc, base_ck, anchor, args, seed):
                             replay_batch=256, kl_weight=args.kl, device=args.device, **spec)
         learner = OnlineLearner(base_ck, None, cfg, anchor=anchor, outcome_map=omap, task_of=lambda d: d.task)
     head = LoRAHeads(base_ck, rank=1).eval().to(args.device)
+    temp = act_temperature(head, args.act_temperature)
     agent = Agent(enc, head, learner, omap, learn=learn, update_every=args.update_every, window=args.window,
-                  map_strength=args.map_strength, seed=seed)
+                  map_strength=args.map_strength, temperature=temp, seed=seed)
     torch.manual_seed(seed)
     env = TRexEnv(seed, frames_per_decision=args.k)
     phases = []
@@ -239,7 +255,8 @@ def run_arm(name, enc, base_ck, anchor, args, seed):
         for k, v in e["by_type"].items():
             acc = by_type.setdefault(k, [0, 0]); acc[0] += v[0]; acc[1] += v[1]
     ls = learner.stats if learner else None
-    return {"arm": name, "seed": seed, "train_phases": phases, "train": summarize(env.tally),
+    return {"arm": name, "seed": seed, "head_scale": round(float(head.scale), 3), "act_temperature": temp,
+            "train_phases": phases, "train": summarize(env.tally),
             "eval": {"deaths_per_min": round(tot["deaths"] / (tot["frames"] / 3600), 3),
                      "clear_rate": round(tot["cleared"] / max(1, tot["cleared"] + tot["deaths"]), 4),
                      "oracle_agreement": round(float(np.mean(agree)), 4) if agree else None,
@@ -276,6 +293,8 @@ def main():
     ap.add_argument("--map-k", type=int, default=64)
     ap.add_argument("--map-tau", type=float, default=0.05)
     ap.add_argument("--map-strength", type=float, default=2.0)
+    ap.add_argument("--act-temperature", default="auto",
+                    help="divide the head's logits by this when acting; auto = head scale / (1/0.07)")
     ap.add_argument("--out", default=None, help="results JSON (default runs/trex_online_<encoder>.json)")
     args = ap.parse_args()
     torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
@@ -300,7 +319,9 @@ def main():
             enc, base_ck = real, real_ck
             anchor = real_anchor(enc, seed, device=args.device)
             bases[seed] = {"base": args.ckpt, "anchor_states": len(anchor[0])}
-            print(f"[base] seed {seed}: released head {args.ckpt}, {len(anchor[0])} anchor states "
+            scale = float(LoRAHeads(base_ck, rank=1).scale)
+            print(f"[base] seed {seed}: released head {args.ckpt} (logit scale {scale:.1f}, acting temperature "
+                  f"{act_temperature(LoRAHeads(base_ck, rank=1), args.act_temperature)}), {len(anchor[0])} anchor states "
                   f"({time.time() - t0:.0f}s)", flush=True)
         else:
             enc = HashEncoder(args.dim)
